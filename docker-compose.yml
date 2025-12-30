@@ -1,0 +1,139 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: stock_management
+      POSTGRES_USER: stock_user
+      POSTGRES_PASSWORD: stock_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stock_user -d stock_management"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis (Primary for Celery + WebSocket)
+  redis:
+    image: redis:7-alpine
+    command: >
+      redis-server 
+      --appendonly yes 
+      --requirepass stock_redis_2024
+      --maxmemory 512mb 
+      --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    healthcheck:
+      test: ["CMD", "redis-cli", "--pass", "stock_redis_2024", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Redis for Celery Results
+  redis-results:
+    image: redis:7-alpine
+    command: >
+      redis-server 
+      --port 6380
+      --appendonly yes 
+      --requirepass stock_results_2024
+      --maxmemory 256mb 
+      --maxmemory-policy allkeys-lru
+    ports:
+      - "6380:6380"
+    volumes:
+      - redis_results_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "--port", "6380", "--pass", "stock_results_2024", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Redis Insight (GUI Monitoring)
+  redis-insight:
+    image: redislabs/redisinsight:latest
+    ports:
+      - "5540:5540"
+    volumes:
+      - redisinsight_data:/db
+    depends_on:
+      redis:
+        condition: service_healthy
+      redis-results:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Django Backend
+  backend:
+    build: .
+    command: >
+      sh -c "sleep 10 &&
+             python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://stock_user:stock_password@db:5432/stock_management
+      - REDIS_URL=redis://:stock_redis_2024@redis:6379/0
+      - REDIS_RESULTS_URL=redis://:stock_results_2024@redis-results:6380/0
+      - DEBUG=True
+    volumes:
+      - .:/app
+      - static_volume:/app/staticfiles
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      redis-results:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Celery Worker
+  celery:
+    build: .
+    command: celery -A backend worker -l info -Q stock,high_priority,reports --without-gossip --without-mingle --without-heartbeat
+    volumes:
+      - .:/app
+    environment:
+      - DATABASE_URL=postgresql://stock_user:stock_password@db:5432/stock_management
+      - REDIS_URL=redis://:stock_redis_2024@redis:6379/0
+      - REDIS_RESULTS_URL=redis://:stock_results_2024@redis-results:6380/0
+    depends_on:
+      - backend
+      - redis
+      - redis-results
+    restart: unless-stopped
+
+  # Celery Beat (Scheduler)
+  celery-beat:
+    build: .
+    command: celery -A backend beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    volumes:
+      - .:/app
+    environment:
+      - DATABASE_URL=postgresql://stock_user:stock_password@db:5432/stock_management
+      - REDIS_URL=redis://:stock_redis_2024@redis:6379/0
+    depends_on:
+      - backend
+      - redis
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  redis_results_data:
+  redisinsight_data:
+  static_volume:

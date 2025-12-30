@@ -1,0 +1,15 @@
+{
+  "expo": {
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "High Prosper needs location to remind customers when you're nearby."
+        }
+      ]
+    ],
+    "android": {
+      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_BACKGROUND_LOCATION"]
+    }
+  }
+}

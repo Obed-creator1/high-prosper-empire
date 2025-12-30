@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block title %}Balance Sheet - High Prosper Services{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h1>Balance Sheet</h1>
+    <p>Assets: RWF {{ assets|default:0 }}</p>
+    <p>Liabilities: RWF {{ liabilities|default:0 }}</p>
+    <p>Equity: RWF {{ equity|default:0 }}</p>
+    <p>Total: RWF {{ total_balance|default:0 }}</p>
+</div>
+{% endblock %}

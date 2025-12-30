@@ -1,0 +1,21 @@
+<!-- templates/emails/weekly_report.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Weekly Analytics Report</title>
+</head>
+<body style="font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px;">
+<div style="max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+    <h1 style="color: #7C3AED;">High Prosper Services</h1>
+    <h2>Weekly Analytics Report - {{ week }}</h2>
+    <hr>
+    <p><strong>Total Revenue:</strong> {{ total_revenue }}</p>
+    <p><strong>Collections:</strong> {{ collections }}</p>
+    <p><strong>Pending:</strong> {{ pending }}</p>
+    <p><strong>Top Performing Village:</strong> {{ top_village }} ({{ top_village_revenue }})</p>
+    <hr>
+    <p style="color: #666;">This report is automatically generated every Monday.</p>
+    <p style="color: #666;">High Prosper Services - Empowering Rwanda</p>
+</div>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Expense - High Prosper Services{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h1>Add Expense</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}  <!-- Assume ExpenseForm in forms.py -->
+        <button type="submit" class="btn btn-warning">Save Expense</button>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,14 @@
+{
+  "build": {
+    "production": {
+      "android": {
+        "gradleCommand": ":app:assembleRelease",
+        "distribution": "internal",
+        "credentialsSource": "local"
+      },
+      "env": {
+        "APP_VARIANT": "production"
+      }
+    }
+  }
+}

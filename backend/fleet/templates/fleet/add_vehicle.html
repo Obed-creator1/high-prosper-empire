@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Vehicle - High Prosper Services{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h1>Add Vehicle</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}  # Assume VehicleForm in forms.py
+        <button type="submit" class="btn btn-primary">Save Vehicle</button>
+    </form>
+</div>
+{% endblock %}

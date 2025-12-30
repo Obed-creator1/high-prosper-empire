@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Stock Items</h2>
+    <input type="text" id="search" placeholder="Search item..." class="form-control mb-2" />
+    <a href="{% url 'stock:stock_add' %}" class="btn btn-success mb-3">Add Item</a>
+
+    <div id="stock-table">
+        {% include 'stock/stock_table.html' %}
+    </div>
+</div>
+
+<script>
+document.getElementById('search').addEventListener('input', function() {
+    const query = this.value;
+    fetch(`/stock/items/search/?q=${query}`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('stock-table').innerHTML = data.html;
+        });
+});
+</script>
+{% endblock %}

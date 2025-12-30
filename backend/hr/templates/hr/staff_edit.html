@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ action }} Staff - High Prosper Services Ltd{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+<style>
+    body {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        font-family: 'Roboto', sans-serif;
+    }
+    .card {
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .form-label {
+        font-weight: 500;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="main-content" id="main-content">
+    <div class="container-fluid px-4 py-4">
+        <div class="card shadow">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">
+                    <i class="fas fa-user-tie me-2 text-primary"></i>{{ action }} Staff
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.user.id_for_label }}" class="form-label">User</label>
+                            {{ form.user }}
+                            {% if form.user.errors %}
+                                <div class="text-danger">{{ form.user.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.department.id_for_label }}" class="form-label">Department</label>
+                            {{ form.department }}
+                            {% if form.department.errors %}
+                                <div class="text-danger">{{ form.department.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label for="{{ form.contract.id_for_label }}" class="form-label">Contract Details</label>
+                            {{ form.contract }}
+                            {% if form.contract.errors %}
+                                <div class="text-danger">{{ form.contract.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.contract_file.id_for_label }}" class="form-label">Contract File</label>
+                            {{ form.contract_file }}
+                            {% if form.contract_file.errors %}
+                                <div class="text-danger">{{ form.contract_file.errors }}</div>
+                            {% endif %}
+                            {% if form.instance.contract_file %}
+                                <p class="mt-2"><a href="{{ form.instance.contract_file.url }}" target="_blank">Current File</a></p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.profile_photo.id_for_label }}" class="form-label">Profile Photo</label>
+                            {{ form.profile_photo }}
+                            {% if form.profile_photo.errors %}
+                                <div class="text-danger">{{ form.profile_photo.errors }}</div>
+                            {% endif %}
+                            {% if form.instance.profile_photo %}
+                                <p class="mt-2"><a href="{{ form.instance.profile_photo.url }}" target="_blank">Current Photo</a></p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.salary.id_for_label }}" class="form-label">Salary (RWF)</label>
+                            {{ form.salary }}
+                            {% if form.salary.errors %}
+                                <div class="text-danger">{{ form.salary.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.status.id_for_label }}" class="form-label">Status</label>
+                            {{ form.status }}
+                            {% if form.status.errors %}
+                                <div class="text-danger">{{ form.status.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end">
+                        <a href="{% url 'hr:staff_list' %}" class="btn btn-secondary me-2">Cancel</a>
+                        <button type="submit" class="btn btn-primary">Save Change</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(function(alert) {
+        setTimeout(() => {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        }, 5000);
+    });
+});
+</script>
+{% endblock %}

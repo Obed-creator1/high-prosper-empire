@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Search Results for "{{ query }}"</h2>
+
+    {% if error %}
+        <div class="alert alert-danger">{{ error }}</div>
+    {% else %}
+        <h4>Core Tasks</h4>
+        {% if core_tasks %}
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Due Date</th>
+                        <th>Status</th>
+                        <th>Priority</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for task in core_tasks %}
+                        <tr>
+                            <td>{{ task.title }}</td>
+                            <td>{{ task.due_date }}</td>
+                            <td>{{ task.status }}</td>
+                            <td>{{ task.priority }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No core tasks found for "{{ query }}".</p>
+        {% endif %}
+
+        <h4>HR Tasks</h4>
+        {% if hr_tasks %}
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Due Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for task in hr_tasks %}
+                        <tr>
+                            <td>{{ task.title }}</td>
+                            <td>{{ task.due_date }}</td>
+                            <td>{{ task.status }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No HR tasks found for "{{ query }}".</p>
+        {% endif %}
+
+        <h4>Leave Requests</h4>
+        {% if leaves %}
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                        <th>Reason</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for leave in leaves %}
+                        <tr>
+                            <td>{{ leave.start_date }}</td>
+                            <td>{{ leave.end_date }}</td>
+                            <td>{{ leave.reason }}</td>
+                            <td>{{ leave.status }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No leave requests found for "{{ query }}".</p>
+        {% endif %}
+    {% endif %}
+
+    <a href="{% url 'core:dashboard' %}" class="btn btn-secondary mt-3">Back to Dashboard</a>
+</div>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Purchase Orders</h2>
+    <a href="{% url 'procurement:purchaseorder_create' %}" class="btn btn-primary mb-3">+ Add Purchase Order</a>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>ID</th><th>Supplier</th><th>Date</th><th>Total Amount</th><th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr>
+                <td>{{ order.id }}</td>
+                <td>{{ order.supplier.name }}</td>
+                <td>{{ order.date }}</td>
+                <td>{{ order.total_amount }}</td>
+                <td>
+                    <a href="{% url 'procurement:purchaseorder_update' order.id %}" class="btn btn-sm btn-warning">Edit</a>
+                    <a href="{% url 'procurement:purchaseorder_delete' order.id %}" class="btn btn-sm btn-danger">Delete</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="text-center">No purchase orders</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial; padding: 40px; background: #f9fafb; }
+        .container { max-width: 600px; margin: auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .header { background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 30px; text-align: center; }
+        .content { padding: 40px; }
+        .total { font-size: 32px; font-weight: bold; color: #065f46; text-align: center; margin: 20px 0; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>HIGH PROSPER SERVICES</h1>
+        <h2>Payslip • {{ payroll.get_month_display }} {{ payroll.year }}</h2>
+    </div>
+    <div class="content">
+        <p>Dear {{ staff.user.get_full_name|default:staff.user.username }},</p>
+        <p>Your salary has been processed successfully.</p>
+        <table width="100%" style="margin: 20px 0;">
+            <tr><td><strong>Base Salary</strong></td><td align="right">{{ staff.salary|floatformat:0 }} CFA</td></tr>
+            <tr><td><strong>Bonus</strong></td><td align="right">+{{ payroll.bonus|floatformat:0 }} CFA</td></tr>
+            <tr><td colspan="2"><hr></td></tr>
+            <tr><td><strong>NET PAY</strong></td><td align="right" class="total">{{ payroll.total|floatformat:0 }} CFA</td></tr>
+        </table>
+        <p>Thank you for your hard work!</p>
+    </div>
+</div>
+</body>
+</html>

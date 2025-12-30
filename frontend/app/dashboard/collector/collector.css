@@ -1,0 +1,174 @@
+/* collector.css — ADVANCED & MODERN STYLES FOR COLLECTOR DASHBOARD */
+
+/* ==========================================================================
+   ROOT VARIABLES & GLOBAL STYLES
+   ========================================================================== */
+:root {
+    --primary: 262 83% 60%;           /* #a855f7 */
+    --primary-dark: 262 83% 50%;
+    --secondary: 330 100% 50%;        /* #ff69b4 */
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --border: 214.3 31.8% 91.4%;
+    --radius: 0.75rem;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --border: 217.2 32.6% 17.5%;
+}
+
+/* ==========================================================================
+   BASE STYLES
+   ========================================================================== */
+body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--background);
+    color: var(--foreground);
+    transition: background 0.3s ease, color 0.3s ease;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 700;
+    letter-spacing: -0.025em;
+}
+
+h2 {
+    font-size: 1.5rem;
+    @apply text-gray-900 dark:text-white;
+}
+
+/* ==========================================================================
+   CARDS & CONTAINERS
+   ========================================================================== */
+.card {
+    @apply bg-card rounded-xl border border-border shadow-sm transition-all duration-300 hover:shadow-md;
+}
+
+.table-container {
+    @apply overflow-x-auto rounded-lg border border-border;
+}
+
+.table {
+    @apply w-full text-sm text-left text-gray-500 dark:text-gray-400;
+}
+
+.table th {
+    @apply px-6 py-4 font-medium text-gray-900 uppercase bg-gray-50 dark:bg-gray-800 dark:text-gray-300;
+}
+
+.table td {
+    @apply px-6 py-4 border-t border-border;
+}
+
+.table tr:hover {
+    @apply bg-gray-50 dark:bg-gray-800 transition-colors;
+}
+
+/* ==========================================================================
+   BUTTONS & INTERACTIVE ELEMENTS
+   ========================================================================== */
+.button {
+    @apply inline-flex items-center px-4 py-2 rounded-md font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
+}
+
+.button-primary {
+    @apply bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 shadow-md hover:shadow-lg transform hover:scale-105;
+}
+
+.button-outline {
+    @apply border border-purple-500 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950;
+}
+
+/* ==========================================================================
+   FORMS & INPUTS
+   ========================================================================== */
+input, select, textarea {
+    @apply w-full px-4 py-2 rounded-md border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200;
+}
+
+.placeholder {
+    @apply text-muted-foreground;
+}
+
+/* ==========================================================================
+   ANIMATIONS
+   ========================================================================== */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.6s ease-out forwards;
+}
+
+.animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* ==========================================================================
+   RESPONSIVE & MOBILE STYLES
+   ========================================================================== */
+@media (max-width: 768px) {
+    .table-container {
+        overflow-x: auto;
+    }
+
+    .table {
+        min-width: 800px;
+    }
+
+    .grid-cols-5 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 640px) {
+    .grid-cols-5 {
+        grid-template-columns: 1fr;
+    }
+
+    .button {
+        padding: 0.5rem 1rem;
+    }
+}
+
+/* ==========================================================================
+   DARK MODE SPECIFIC STYLES
+   ========================================================================== */
+.dark .table th {
+    @apply bg-gray-800 text-gray-300;
+}
+
+.dark .table tr:hover {
+    @apply bg-gray-800;
+}
+
+.dark .card {
+    @apply bg-gray-900 border-gray-800;
+}
+
+@keyframes fade-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+    animation: fade-in 0.6s ease-out;
+}

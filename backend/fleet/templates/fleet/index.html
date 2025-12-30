@@ -1,0 +1,15 @@
+<h1>Fleet Vehicles</h1>
+<table border="1">
+    <tr>
+        <th>Plate Number</th>
+        <th>Model</th>
+        <th>Status</th>
+    </tr>
+    {% for v in vehicles %}
+    <tr>
+        <td>{{ v.plate_number }}</td>
+        <td>{{ v.model }}</td>
+        <td>{{ v.status }}</td>
+    </tr>
+    {% endfor %}
+</table>

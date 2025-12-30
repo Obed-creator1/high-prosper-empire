@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>High Prosper - Collector Report</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 2cm;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #6b46c1;
+            padding-bottom: 15px;
+        }
+
+        .logo {
+            width: 120px;
+            height: auto;
+            margin-bottom: 10px;
+        }
+
+        .company-name {
+            font-size: 28px;
+            font-weight: bold;
+            color: #6b46c1;
+            margin: 0;
+        }
+
+        .contact-info {
+            font-size: 14px;
+            color: #555;
+            margin: 5px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #6b46c1;
+            color: white;
+            font-weight: bold;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        .chart-container {
+            margin: 30px 0;
+            page-break-inside: avoid;
+        }
+
+        .chart-title {
+            text-align: center;
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #6b46c1;
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 12px;
+            color: #777;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+        }
+
+        .page-number {
+            float: right;
+        }
+
+        .date {
+            float: left;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- Header -->
+    <div class="header">
+        <img src="{{ request.build_absolute_uri }}/static/images/logo.png" alt="High Prosper Logo" class="logo">
+        <h1 class="company-name">High Prosper Services Ltd</h1>
+        <p class="contact-info">
+            Kigali, Gikondo • TIN: 102569672<br>
+            Phone: +250 785 340 438 • Email: highprosperservicesltd@gmail.com<br>
+            Website: www.highprosper.com
+        </p>
+    </div>
+
+    <!-- Title -->
+    <h2 style="text-align: center; color: #333; margin-bottom: 20px;">
+        Collector Performance Report<br>
+        <small>Generated on: {{ now|date:"d F Y" }}</small>
+    </h2>
+
+    <!-- Table -->
+    <table>
+        <thead>
+        <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>Villages</th>
+            <th>Rating</th>
+            <th>Efficiency</th>
+            <th>Customers</th>
+            <th>Status</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for collector in collectors %}
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ collector.full_name }}</td>
+            <td>{{ collector.phone|default:"-" }}</td>
+            <td>{{ collector.email|default:"-" }}</td>
+            <td>{{ collector.village_count }}</td>
+            <td>{{ collector.rating|default:"-" }} ★</td>
+            <td>{{ collector.efficiency_percentage|floatformat:1 }}%</td>
+            <td>{{ collector.total_customers }}</td>
+            <td>
+                {% if collector.is_active %}
+                <span style="color: green;">Active</span>
+                {% else %}
+                <span style="color: red;">Inactive</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="9" style="text-align: center; padding: 20px;">
+                No collectors found.
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Charts -->
+    <div class="chart-container">
+        <h3 class="chart-title">Collector Efficiency Overview</h3>
+        <img src="{{ efficiency_chart_url }}" style="width: 100%; max-height: 400px;" alt="Efficiency Chart">
+    </div>
+
+    <div class="chart-container">
+        <h3 class="chart-title">Top Rated Collectors</h3>
+        <img src="{{ rating_chart_url }}" style="width: 100%; max-height: 400px;" alt="Rating Chart">
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <div class="date">Generated: {{ now|date:"d F Y H:i" }}</div>
+        <div class="page-number">Page <span class="pageCounter"></span> of <span class="totalPages"></span></div>
+    </div>
+</div>
+</body>
+</html>

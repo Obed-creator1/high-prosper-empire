@@ -1,0 +1,17 @@
+{
+  "title": "Collection Reminder ⏰",
+  "body": "Tomorrow is collection day in {{ village_name }}.\nPrepare your route and vehicle.",
+  "icon": "/static/images/logo-192.png",
+  "image": "/static/images/collection-day.jpg",
+  "requireInteraction": true,
+  "actions": [
+    {
+      "action": "view_schedule",
+      "title": "View Schedule"
+    }
+  ],
+  "data": {
+    "url": "/collector/schedule/",
+    "notification_type": "reminder"
+  }
+}

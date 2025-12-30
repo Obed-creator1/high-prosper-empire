@@ -1,0 +1,16 @@
+{
+  "title": "New Task Assigned",
+  "body": "{{ task.title }} - Due: {{ task.due_date|date:'d M Y' }}",
+  "icon": "/static/images/logo-192.png",
+  "badge": "/static/images/badge.png",
+  "vibrate": [200, 100, 200],
+  "actions": [
+    {
+      "action": "view_task",
+      "title": "View Task"
+    }
+  ],
+  "data": {
+    "url": "{{ task_url }}"
+  }
+}

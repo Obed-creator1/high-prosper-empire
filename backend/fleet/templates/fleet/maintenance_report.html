@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block content %}
+  <h1>Maintenance Report</h1>
+  <canvas id="monthlyCostsChart" aria-label="Monthly maintenance costs chart"></canvas>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    const ctx = document.getElementById('monthlyCostsChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: {{ month_labels|safe }},
+        datasets: [{
+          label: 'Monthly Costs ($)',
+          data: {{ monthly_costs|safe }},
+          backgroundColor: '#4e79a7',
+          borderColor: '#4e79a7',
+          fill: false
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: { beginAtZero: true, title: { display: true, text: 'Cost ($)' } },
+          x: { title: { display: true, text: 'Month' } }
+        }
+      }
+    });
+  </script>
+{% endblock %}

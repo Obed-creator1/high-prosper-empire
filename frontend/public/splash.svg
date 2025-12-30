@@ -1,0 +1,42 @@
+<!-- public/splash.svg — GENERATE PNG FROM THIS -->
+<svg width="2048" height="2048" viewBox="0 0 2048 2048" xmlns="http://www.w3.org/2000/svg">
+    <!-- Deep Space Black -->
+    <rect width="2048" height="2048" fill="#000000"/>
+
+    <!-- Electric Grid Background -->
+    <defs>
+        <pattern id="grid" width="100" height="100" patternUnits="userSpaceOnUse">
+            <path d="M 100 0 L 0 0 0 100" fill="none" stroke="#00F0FF" stroke-width="2" opacity="0.1"/>
+        </pattern>
+    </defs>
+    <rect width="2048" height="2048" fill="url(#grid)"/>
+
+    <!-- FLEET OS Text – Cyber Glow -->
+    <text x="1024" y="900" text-anchor="middle" font-family="Impact, Arial Black, sans-serif"
+          font-size="380" font-weight="900" fill="#00F0FF" letter-spacing="20">
+        FLEET
+    </text>
+    <text x="1024" y="1200" text-anchor="middle" font-family="Impact, Arial Black, sans-serif"
+          font-size="380" font-weight="900" fill="#9D00FF" letter-spacing="20">
+        OS
+    </text>
+    <text x="1024" y="1450" text-anchor="middle" font-family="Arial, sans-serif"
+          font-size="140" fill="#00FFFF" opacity="0.8">
+        2026
+    </text>
+
+    <!-- Neon Pulse Rings -->
+    <circle cx="1024" cy="1024" r="600" fill="none" stroke="#00F0FF" stroke-width="8">
+        <animate attributeName="r" values="600;900;600" dur="4s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0.8;0.2;0.8" dur="4s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="1024" cy="1024" r="800" fill="none" stroke="#9D00FF" stroke-width="12" opacity="0.6">
+        <animate attributeName="r" values="800;1100;800" dur="6s" repeatCount="indefinite"/>
+    </circle>
+
+    <!-- Truck Silhouette in Center -->
+    <path d="M1024 600 L1024 400 Q1024 300 924 300 L724 300 Q624 300 624 400 L624 600 L424 600 L424 800 Q424 1000 624 1000 L1424 1000 Q1624 1000 1624 800 L1624 600 Z"
+          fill="none" stroke="#00F0FF" stroke-width="40"/>
+    <circle cx="724" cy="1100" r="200" fill="#000" stroke="#00F0FF" stroke-width="30"/>
+    <circle cx="1324" cy="1100" r="200" fill="#000" stroke="#00F0FF" stroke-width="30"/>
+</svg>

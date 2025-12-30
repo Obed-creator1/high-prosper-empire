@@ -1,0 +1,3 @@
+High Prosper Update
+{{ message }}
+Check your dashboard: {{ dashboard_url }}

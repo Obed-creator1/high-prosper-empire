@@ -1,0 +1,197 @@
+{
+  "name": "HIGH PROSPER EMPIRE 2026",
+  "short_name": "ProsperAI",
+  "description": "Your Self-Aware Financial & Business Empire — AI-Powered • Offline-First • Real-Time • Unstoppable",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#000000",
+  "theme_color": "#00F0FF",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["business", "finance", "productivity", "utilities", "ai"],
+  "prefer_related_applications": false,
+
+  "icons": [
+    {
+      "src": "/fleet-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-48x48.png",
+      "sizes": "48x48",
+      "type": "image/png"
+    }
+  ],
+
+  "screenshots": [
+    {
+      "src": "/screenshots/desktop-wide.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "HIGH PROSPER EMPIRE — AI-Powered Dashboard"
+    },
+    {
+      "src": "/screenshots/desktop-narrow.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Real-Time Fleet & Collector Tracking"
+    },
+    {
+      "src": "/screenshots/mobile-home.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "ProsperAI Mobile — Empire Overview"
+    },
+    {
+      "src": "/screenshots/mobile-maps.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Live Collector GPS Tracking"
+    },
+    {
+      "src": "/screenshots/mobile-payments.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Instant Payment Processing"
+    }
+  ],
+
+  "shortcuts": [
+    {
+      "name": "Empire Dashboard",
+      "short_name": "Home",
+      "description": "Open the main HIGH PROSPER dashboard",
+      "url": "/",
+      "icons": [{ "src": "/icons/home-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Fleet Control",
+      "short_name": "Fleet",
+      "description": "Monitor and manage fleet operations",
+      "url": "/dashboard/fleet",
+      "icons": [{ "src": "/icons/fleet-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Collector Routes",
+      "short_name": "Collectors",
+      "description": "Live tracking and performance",
+      "url": "/dashboard/collectors",
+      "icons": [{ "src": "/icons/collectors-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Customer Portal",
+      "short_name": "Customers",
+      "description": "Manage customer accounts and contracts",
+      "url": "/dashboard/customers",
+      "icons": [{ "src": "/icons/customers-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "AI Insights",
+      "short_name": "AI",
+      "description": "Self-aware analytics and predictions",
+      "url": "/dashboard/ai-insights",
+      "icons": [{ "src": "/icons/ai-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Payments",
+      "short_name": "Payments",
+      "description": "Process and track all payments",
+      "url": "/dashboard/payments",
+      "icons": [{ "src": "/icons/payments-96x96.png", "sizes": "96x96" }]
+    }
+  ],
+
+  "edge_side_panel": {
+    "preferred_width": 480
+  },
+
+  "protocol_handlers": [
+    {
+      "protocol": "web+prosper",
+      "url": "/?link=%s"
+    }
+  ],
+
+  "share_target": {
+    "action": "/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "files",
+          "accept": ["image/*", "application/pdf"]
+        }
+      ]
+    }
+  },
+
+  "features": [
+    "Offline-First Architecture",
+    "AI-Powered Self-Aware Analytics",
+    "Real-Time GPS Tracking",
+    "Background Sync",
+    "Push Notifications",
+    "End-to-End Encrypted Local Storage",
+    "Cross-Platform (Web, Mobile, Desktop)"
+  ],
+
+  "related_applications": [],
+
+  "iarc_rating_id": "e5b3e5e5-5e5e-5e5e-5e5e-5e5e5e5e5e5e"
+}

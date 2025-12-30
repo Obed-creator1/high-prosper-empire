@@ -1,0 +1,16 @@
+{
+  "title": "High Prosper Update",
+  "body": "{{ message|truncatewords:20 }}",
+  "icon": "/static/images/logo-192.png",
+  "badge": "/static/images/badge.png",
+  "vibrate": [200, 100, 200],
+  "actions": [
+    {
+      "action": "open_dashboard",
+      "title": "View Dashboard"
+    }
+  ],
+  "data": {
+    "url": "{{ dashboard_url }}"
+  }
+}

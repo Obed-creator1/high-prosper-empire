@@ -1,0 +1,24 @@
+[
+  {
+    "model": "reports.reportcategory",
+    "pk": 1,
+    "fields": {
+      "name": "Inventory Reports",
+      "slug": "inventory",
+      "description": "Inventory valuation and stock movement reports",
+      "icon": "📦",
+      "is_active": true
+    }
+  },
+  {
+    "model": "reports.reportcategory",
+    "pk": 2,
+    "fields": {
+      "name": "Financial Reports",
+      "slug": "financial",
+      "description": "Financial analysis and valuation reports",
+      "icon": "💰",
+      "is_active": true
+    }
+  }
+]

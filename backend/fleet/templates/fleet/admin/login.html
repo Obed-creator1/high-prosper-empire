@@ -1,0 +1,242 @@
+
+{% load i18n static %}
+
+{% block title %}NEURAL HANDSHAKE • Quantum Core • 2050{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    body {
+        margin: 0;
+        height: 100vh;
+        background: #000;
+        overflow: hidden;
+        font-family: 'Orbitron', sans-serif;
+        position: relative;
+        color: #00ffea;
+    }
+
+    /* Neural Void */
+    body::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background:
+                radial-gradient(circle at 50% 50%, rgba(0, 255, 234, 0.3), transparent 70%),
+                radial-gradient(circle at 20% 80%, rgba(255, 0, 255, 0.2), transparent 60%),
+                radial-gradient(circle at 80% 20%, rgba(0, 255, 255, 0.2), transparent 60%);
+        animation: neuralPulse 10s ease infinite;
+    }
+
+    @keyframes neuralPulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.08); }
+    }
+
+    /* Neural Handshake Core */
+    .neural-core {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 600px;
+        height: 600px;
+        border-radius: 50%;
+        background: conic-gradient(from 0deg, #00ffea, #ff00ff, #00ffff, #ff6b6b, #00ffea);
+        background-size: 400% 400%;
+        animation: neuralFlow 8s linear infinite;
+        box-shadow: 0 0 200px rgba(0, 255, 234, 0.9);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+    }
+
+    @keyframes neuralFlow {
+        0% { background-position: 0% 50%; }
+        100% { background-position: 100% 50%; }
+    }
+
+    .inner-core {
+        width: 400px;
+        height: 400px;
+        background: black;
+        border-radius: 50%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border: 6px solid #00ffea;
+        box-shadow:
+                inset 0 0 100px rgba(0, 255, 234, 0.6),
+                0 0 150px rgba(255, 0, 255, 0.8);
+        animation: coreBeat 2s ease infinite;
+    }
+
+    @keyframes coreBeat {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+    }
+
+    .neural-logo {
+        width: 180px;
+        height: 180px;
+        margin-bottom: 2rem;
+        border-radius: 50%;
+        background: radial-gradient(circle, #00ffea, #ff00ff);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 0 120px #00ffea;
+        animation: spin 20s linear infinite;
+    }
+
+    h1 {
+        font-size: 5rem;
+        font-weight: 900;
+        background: linear-gradient(90deg, #00ffea, #ff00ff, #00ffff);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        text-shadow: 0 0 80px #00ffea;
+        margin: 1rem 0;
+    }
+
+    .status {
+        font-size: 2.5rem;
+        color: #ff00ff;
+        margin: 2rem 0;
+        min-height: 4rem;
+        text-shadow: 0 0 40px #ff00ff;
+    }
+
+    .brainwave {
+        width: 300px;
+        height: 100px;
+        background: linear-gradient(90deg, transparent, #00ffea, transparent);
+        border-radius: 50%;
+        animation: wave 3s ease infinite;
+        margin: 3rem 0;
+    }
+
+    @keyframes wave {
+        0%, 100% { opacity: 0.3; transform: scaleX(0.8); }
+        50% { opacity: 1; transform: scaleX(1.2); }
+    }
+
+    .handshake-btn {
+        padding: 2rem 4rem;
+        background: linear-gradient(45deg, #00ffea, #ff00ff);
+        color: black;
+        border: none;
+        border-radius: 50px;
+        font-size: 2.5rem;
+        font-weight: bold;
+        cursor: pointer;
+        box-shadow: 0 0 100px rgba(0, 255, 234, 0.8);
+        animation: pulseBtn 2s infinite;
+    }
+
+    @keyframes pulseBtn {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+    }
+
+    .hidden-form {
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="neural-core">
+    <div class="inner-core">
+        <div class="neural-logo">
+            <img src="{% static 'images/logo.png' %}" alt="HP" class="w-40 h-40 rounded-full">
+        </div>
+
+        <h1>NEURAL HANDSHAKE</h1>
+        <p class="text-4xl text-cyan-300 mb-8">HIGH PROSPER • 2050</p>
+
+        <div id="status" class="status">Initiating neural link...</div>
+
+        <div class="brainwave></div>
+
+        <button class="handshake-btn" id="initiate">
+        INITIATE HANDSHAKE
+        </button>
+    </div>
+</div>
+
+<!-- Hidden real form -->
+<form method="post" id="real-form" class="hidden-form">
+    {% csrf_token %}
+    {{ form.username }}
+    {{ form.password }}
+    <input type="submit">
+</form>
+
+<canvas id="quantum-field" style="position:fixed; inset:0; pointer-events:none;"></canvas>
+
+<script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+<script>
+    // Quantum field
+    particlesJS("quantum-field", {
+        particles: {
+            number: { value: 300 },
+            color: { value: ["#00ffea", "#ff00ff", "#00ffff", "#ff6b6b"] },
+            shape: { type: ["circle", "triangle"] },
+            opacity: { value: 0.9 },
+            size: { value: 5 },
+            line_linked: { enable: true, distance: 200, color: "#00ffea", opacity: 0.5 },
+            move: { enable: true, speed: 4, attract: { enable: true } }
+        }
+    });
+
+    const speak = (text) => {
+        const u = new SpeechSynthesisUtterance(text);
+        u.rate = 0.85;
+        u.pitch = 0.7;
+        u.volume = 1;
+        speechSynthesis.speak(u);
+    };
+
+    const status = document.getElementById('status');
+    const btn = document.getElementById('initiate');
+    const form = document.getElementById('real-form');
+
+    speak("Neural handshake protocol initiated. Synchronizing consciousness with fleet core.");
+
+    let phase = 0;
+    const phases = [
+        "Initiating neural link...",
+        "Mapping cortical patterns...",
+        "Synchronizing quantum entanglement...",
+        "Verifying consciousness signature...",
+        "Neural handshake complete",
+        "Welcome back, Commander"
+    ];
+
+    btn.addEventListener('click', () => {
+        btn.disabled = true;
+        let i = 0;
+        const interval = setInterval(() => {
+            if (i < phases.length) {
+                status.textContent = phases[i];
+                speak(phases[i]);
+                i++;
+            } else {
+                clearInterval(interval);
+                setTimeout(() => {
+                    form.username.value = "admin";
+                    form.password.value = "your_password";
+                    form.submit();
+                }, 2000);
+            }
+        }, 2500);
+    });
+
+    // Auto-initiate after 2 seconds
+    setTimeout(() => btn.click(), 2000);
+</script>
+{% endblock %}

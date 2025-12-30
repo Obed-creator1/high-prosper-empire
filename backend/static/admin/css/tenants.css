@@ -1,0 +1,8 @@
+/* Clean company admin styling */
+.field-slug_preview code {
+    font-size: 1.1em;
+    font-weight: bold;
+}
+.field-logo_preview img {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}

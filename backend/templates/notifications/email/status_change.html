@@ -1,0 +1,8 @@
+{% extends "notifications/email/base.html" %}
+
+{% block content %}
+<p>Dear {{ user.get_full_name|default:user.username }},</p>
+<p>Your account status has been updated:</p>
+<p><strong>Status:</strong> {{ status }}</p>
+<p>Please contact admin if you have any questions.</p>
+{% endblock %}

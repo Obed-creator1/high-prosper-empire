@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HIGH PROSPER 2026 — Offline</title>
+    <link rel="icon" href="/fleet-icon.svg" />
+    <style>
+        :root {
+            --cyan: #00F0FF;
+            --purple: #9D00FF;
+            --pink: #FF00FF;
+            --success: #00FF9D;
+            --warning: #FF9500;
+            --black: #000000;
+            --gray: #111111;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            min-height: 100vh;
+            background: var(--black);
+            color: var(--cyan);
+            font-family: 'Segoe UI', 'Roboto', system-ui, sans-serif;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Animated Background Grid */
+        .grid {
+            position: absolute;
+            inset: 0;
+            background-image:
+                    linear-gradient(var(--cyan) 1px, transparent 1px),
+                    linear-gradient(90deg, var(--cyan) 1px, transparent 1px);
+            background-size: 80px 80px;
+            opacity: 0.06;
+            animation: grid-move 40s linear infinite;
+        }
+
+        @keyframes grid-move {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(80px, 80px); }
+        }
+
+        /* Pulse Rings */
+        .pulse {
+            position: absolute;
+            width: 800px;
+            height: 800px;
+            border: 3px solid var(--cyan);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            animation: pulse 6s ease-out infinite;
+        }
+
+        .pulse:nth-child(2) { animation-delay: 2s; width: 1000px; height: 1000px; }
+        .pulse:nth-child(3) { animation-delay: 4s; width: 1200px; height: 1200px; }
+
+        @keyframes pulse {
+            0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0.6; }
+            100% { transform: translate(-50%, -50%) scale(1.8); opacity: 0; }
+        }
+
+        /* Main Container */
+        .container {
+            text-align: center;
+            z-index: 10;
+            padding: 2rem;
+            max-width: 900px;
+        }
+
+        /* Logo */
+        .logo {
+            font-size: 8rem;
+            font-weight: 900;
+            background: linear-gradient(90deg, var(--cyan), var(--purple), var(--pink));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 1rem;
+            animation: glow 5s ease-in-out infinite;
+        }
+
+        @keyframes glow {
+            0%, 100% { text-shadow: 0 0 40px var(--cyan); }
+            50% { text-shadow: 0 0 100px var(--purple), 0 0 140px var(--pink); }
+        }
+
+        /* Title */
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin: 1rem 0;
+            letter-spacing: 8px;
+            background: linear-gradient(90deg, var(--cyan), var(--pink));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: scan 10s linear infinite;
+        }
+
+        @keyframes scan {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 300% 50%; }
+        }
+
+        /* Subtitle */
+        .subtitle {
+            font-size: 2rem;
+            margin: 2rem 0;
+            opacity: 0.9;
+            font-weight: 600;
+        }
+
+        /* Message */
+        .message {
+            font-size: 1.3rem;
+            line-height: 2;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 2rem auto;
+        }
+
+        .message strong {
+            color: var(--success);
+            font-weight: 700;
+        }
+
+        /* Status Dots */
+        .status {
+            margin-top: 3rem;
+            font-size: 1.1rem;
+            opacity: 0.8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .dot {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .dot::before {
+            content: "●";
+            font-size: 1.4rem;
+        }
+
+        .online::before { color: var(--success); }
+        .offline::before { color: var(--warning); }
+
+        /* Online Banner - Hidden by default */
+        #online-banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(90deg, #00FF9D, #00C785);
+            color: black;
+            padding: 1rem;
+            text-align: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+            z-index: 1000;
+            transform: translateY(-100%);
+            transition: transform 0.6s ease;
+            box-shadow: 0 4px 20px rgba(0, 255, 157, 0.3);
+        }
+
+        #online-banner.show {
+            transform: translateY(0);
+        }
+
+        @media (max-width: 768px) {
+            .logo { font-size: 5.5rem; }
+            h1 { font-size: 2.5rem; letter-spacing: 5px; }
+            .subtitle { font-size: 1.6rem; }
+            .message { font-size: 1.1rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="grid"></div>
+<div class="pulse"></div>
+<div class="pulse"></div>
+<div class="pulse"></div>
+
+<!-- Online Banner (hidden by default) -->
+<div id="online-banner">
+    ✓ You're back online — Syncing live data...
+</div>
+
+<div class="container">
+    <div class="logo">EMPIRE</div>
+    <h1>HIGH PROSPER 2026</h1>
+    <div class="subtitle">OFFLINE MODE ACTIVE</div>
+
+    <div class="message">
+        <p>Your entire empire continues to operate seamlessly offline.</p>
+        <p><strong>Fleet • Collectors • Customers • Payments • HR • Accounting • Maps</strong><br>
+            All modules are fully functional using local data.</p>
+        <p>All actions are queued and will sync automatically when connection returns.</p>
+        <p><strong>No data loss. No downtime. Empire never sleeps.</strong></p>
+    </div>
+
+    <div class="status">
+        <span class="dot offline">Offline Mode</span>
+        <span class="dot online">Local Cache Active</span>
+        <span class="dot offline">Sync Pending</span>
+    </div>
+</div>
+
+<script>
+    // Auto-detect when online and show banner
+    function checkOnlineStatus() {
+        if (navigator.onLine) {
+            document.getElementById('online-banner').classList.add('show');
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                document.getElementById('online-banner').classList.remove('show');
+            }, 5000);
+
+            // Optional: trigger background sync
+            if ('serviceWorker' in navigator && 'sync' in registration) {
+                navigator.serviceWorker.ready.then(reg => {
+                    reg.sync.register('sync-offline-actions');
+                    reg.sync.register('sync-collector-visits');
+                });
+            }
+        }
+    }
+
+    // Check immediately
+    checkOnlineStatus();
+
+    // Listen for online event
+    window.addEventListener('online', checkOnlineStatus);
+</script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+*Account Status Update*
+Your status: *{{ status }}*
+
+Contact admin if needed.
+
+High Prosper Services Ltd
++250 785 340 438

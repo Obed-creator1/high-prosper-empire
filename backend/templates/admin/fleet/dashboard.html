@@ -1,0 +1,65 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Fleet Dashboard | {{ block.super }}{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<style>
+    .stat-card { @apply bg-white rounded-xl shadow-lg p-6 border border-gray-200; }
+    .stat-value { @apply text-4xl font-black text-indigo-600 }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto p-8">
+    <h1 class="text-4xl font-bold mb-8 text-gray-800">High Prosper Fleet Dashboard 2025</h1>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6 mb-10">
+        {% for stat in stats %}
+        <div class="stat-card">
+            <p class="text-sm text-gray-600">{{ stat.label }}</p>
+            <p class="stat-value">{{ stat.value }}</p>
+        </div>
+        <div class="text-6xl mb-4">
+            {% if label == "Total Vehicles" %}Truck
+            {% elif label == "Active/On Road" %}Lightning Bolt
+            {% elif label == "In Workshop" %}Wrench
+            {% elif label == "Compliance Expired" %}Alert Triangle
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="stat-card">
+            <h3 class="text-xl font-bold mb-4">Fuel Efficiency Trend</h3>
+            <div id="fuelChart" class="h-64"></div>
+        </div>
+        <div class="stat-card">
+            <h3 class="text-xl font-bold mb-4">Compliance Alerts</h3>
+            <div class="space-y-3">
+                {% for alert in alerts %}
+                <div class="p-3 rounded-lg {{ alert.bg }}">
+                    <p class="font-bold {{ alert.text }}">{{ alert.title }}</p>
+                    <p class="text-sm">{{ alert.count }} vehicles</p>
+                </div>
+                {% empty %}
+                <p class="text-green-600 font-bold">All clear!</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script>
+    new ApexCharts(document.querySelector("#fuelChart"), {
+        chart: { type: 'line', height: 250 },
+        series: [{ name: 'km/L', data: [6.2, 6.8, 5.9, 7.1, 6.5, 7.3] }],
+        xaxis: { categories: ['Jan','Feb','Mar','Apr','May','Jun'] },
+        colors: ['#10b981']
+    }).render();
+</script>
+{% endblock %}

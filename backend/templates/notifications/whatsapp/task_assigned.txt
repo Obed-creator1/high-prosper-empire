@@ -1,0 +1,11 @@
+*New Task Assigned*
+{{ task.title }}
+
+{{ task.description }}
+
+*Due:* {{ task.due_date|date:"d M Y" }}
+
+View task: {{ task_url }}
+
+High Prosper Services Ltd
++250 785 340 438

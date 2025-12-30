@@ -1,0 +1,155 @@
+/* app/(fleet)/fleet.css — FLEET OS 2026 OFFICIAL THEME (2026 FINAL) */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ───────────────────────────────────────────────────────────── */
+/* ROOT COLORS – DARK MODE ONLY (Fleet OS is always dark)    */
+/* ───────────────────────────────────────────────────────────── */
+@layer base {
+    :root {
+        --bg-primary: #000000;
+        --bg-secondary: #0a0a0a;
+        --text-primary: #ffffff;
+        --text-secondary: #a0a0a0;
+        --accent-cyan: #00f0ff;
+        --accent-purple: #9d00ff;
+        --accent-pink: #ff00ff;
+        --success: #00ff9d;
+        --warning: #ff9500;
+        --danger: #ff0055;
+    }
+
+    html {
+        scroll-behavior: smooth;
+    }
+
+    body {
+        @apply bg-black text-white font-sans antialiased;
+        background: radial-gradient(circle at top left, #1a0033, #000000 60%);
+    }
+}
+
+/* ───────────────────────────────────────────────────────────── */
+/* GLASSMORPHISM & CARDS – FIXED (No invalid Tailwind classes) */
+/* ───────────────────────────────────────────────────────────── */
+@layer components {
+    .glass-card {
+        @apply bg-black/40 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl
+        transition-all duration-300 hover:shadow-cyan-500/20 hover:border-cyan-500/30;
+    }
+
+    /* FIXED: Use arbitrary values instead of to-white/2 */
+    .glass-panel {
+        background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+        @apply backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl;
+    }
+
+    .status-badge {
+        @apply px-6 py-3 rounded-full font-bold text-sm tracking-wider uppercase shadow-lg;
+    }
+
+    .on-road { @apply bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-cyan-500/50; }
+    .workshop { @apply bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-red-500/50; }
+    .active { @apply bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-green-500/50; }
+    .standby { @apply bg-gradient-to-r from-gray-500 to-gray-700 text-white; }
+}
+
+/* ───────────────────────────────────────────────────────────── */
+/* ANIMATIONS                                                   */
+/* ───────────────────────────────────────────────────────────── */
+@keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 20px rgba(0, 240, 255, 0.4); }
+    50% { box-shadow: 0 0 40px rgba(0, 240, 255, 0.8); }
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+@keyframes scan {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+}
+
+.animate-pulse-glow { animation: pulse-glow 4s ease-in-out infinite; }
+.animate-float { animation: float 6s ease-in-out infinite; }
+.animate-scan {
+    background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.1), transparent);
+    background-size: 200% 100%;
+    animation: scan 8s linear infinite;
+}
+
+/* ───────────────────────────────────────────────────────────── */
+/* HEADER & TITLE                                               */
+/* ───────────────────────────────────────────────────────────── */
+.fleet-header {
+    @apply fixed top-0 left-0 right-0 z-50 backdrop-blur-2xl bg-black/80 border-b border-white/10;
+}
+
+.fleet-title {
+    @apply text-5xl font-black bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500
+    bg-clip-text text-transparent animate-scan;
+}
+
+/* ───────────────────────────────────────────────────────────── */
+/* STATS CARDS                                                  */
+/* ───────────────────────────────────────────────────────────── */
+.stat-card {
+    @apply relative overflow-hidden rounded-3xl p-8 text-white glass-card animate-pulse-glow;
+}
+
+.stat-card::before {
+    content: '';
+    @apply absolute inset-0 opacity-0 transition-opacity duration-500;
+    background: radial-gradient(circle at 30% 30%, #00f0ff, transparent 70%);
+}
+
+.stat-card:hover::before {
+    @apply opacity-30;
+}
+
+/* ───────────────────────────────────────────────────────────── */
+/* TABLES                                                       */
+/* ───────────────────────────────────────────────────────────── */
+.fleet-table {
+    @apply w-full border-collapse glass-card overflow-hidden;
+}
+
+.fleet-table th {
+    @apply bg-white/5 backdrop-blur border-b border-white/10 px-6 py-5 text-left font-bold text-cyan-400 uppercase tracking-wider;
+}
+
+.fleet-table td {
+    @apply px-6 py-5 border-b border-white/5 transition-colors hover:bg-white/5;
+}
+
+.fleet-table tr:hover {
+    @apply bg-gradient-to-r from-white/5 to-transparent;
+}
+
+/* ───────────────────────────────────────────────────────────── */
+/* BUTTONS                                                      */
+/* ───────────────────────────────────────────────────────────── */
+.btn-primary {
+    @apply px-8 py-4 rounded-2xl font-bold text-white shadow-2xl transition-all duration-300
+    bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500
+    hover:shadow-cyan-500/50 hover:scale-105 active:scale-95;
+}
+
+.btn-danger {
+    @apply bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-500 hover:to-pink-500 hover:shadow-red-500/50;
+}
+
+.btn-success {
+    @apply bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 hover:shadow-green-500/50;
+}
+
+/* ───────────────────────────────────────────────────────────── */
+/* RESPONSIVE                                                   */
+/* ───────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .fleet-title { @apply text-3xl; }
+    .stat-card, .glass-panel { @apply p-6; }
+}

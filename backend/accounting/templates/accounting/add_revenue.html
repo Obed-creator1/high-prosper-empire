@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Revenue - High Prosper Services{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h1>Add Revenue</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}  <!-- Assume RevenueForm in forms.py -->
+        <button type="submit" class="btn btn-success">Save Revenue</button>
+    </form>
+</div>
+{% endblock %}

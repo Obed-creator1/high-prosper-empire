@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block title %}Fleet Vehicles - High Prosper Services{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h1>Fleet Vehicles List</h1>
+    <a href="{% url 'fleet:add_vehicle' %}" class="btn btn-primary mb-3">Add Vehicle</a>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Model</th>
+                <th>Plate Number</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for vehicle in vehicles %}
+            <tr>
+                <td>{{ vehicle.model }}</td>
+                <td>{{ vehicle.plate_number }}</td>
+                <td>{{ vehicle.status }}</td>
+                <td>
+                    <a href="{% url 'fleet:vehicle_edit' vehicle.id %}" class="btn btn-warning btn-sm">Edit</a>
+                    <a href="{% url 'fleet:vehicle_delete' vehicle.id %}" class="btn btn-danger btn-sm">Delete</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-center">No vehicles yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

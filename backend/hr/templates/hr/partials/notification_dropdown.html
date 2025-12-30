@@ -1,0 +1,29 @@
+<li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="fas fa-bell me-1"></i> Notifications
+        {% if unread_count > 0 %}
+            <span class="badge bg-danger ms-1">{{ unread_count }}</span>
+        {% endif %}
+    </a>
+    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationDropdown">
+        {% for notification in notifications|slice:":5" %}
+            <li>
+                <a class="dropdown-item {% if not notification.is_read %}text-bg-warning{% endif %}" href="{% url 'hr:notifications' %}#notification-{{ notification.id }}">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h6 class="mb-1">{{ notification.title }}</h6>
+                        <small class="text-muted">{{ notification.created_at|date:"M d H:i" }}</small>
+                    </div>
+                    <p class="mb-0 small">{{ notification.message|truncatewords:10 }}</p>
+                    <small class="text-muted">{{ notification.notification_type }}</small>
+                </a>
+            </li>
+            {% if not forloop.last %}
+                <li><hr class="dropdown-divider"></li>
+            {% endif %}
+        {% empty %}
+            <li><span class="dropdown-item text-center text-muted">No new notifications</span></li>
+        {% endfor %}
+        <li><hr class="dropdown-divider"></li>
+        <li><a class="dropdown-item text-center" href="{% url 'hr:notifications' %}">View All Notifications</a></li>
+    </ul>
+</li>

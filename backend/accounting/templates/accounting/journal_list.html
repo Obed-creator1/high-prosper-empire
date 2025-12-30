@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}Journal Entries - High Prosper Services{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h1>Journal Entries List</h1>
+    <a href="{% url 'core:add_journal_entry' %}" class="btn btn-primary mb-3">Add Journal Entry</a>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Description</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Created By</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in journal_entries %}
+            <tr>
+                <td>{{ entry.date }}</td>
+                <td>{{ entry.description }}</td>
+                <td>{{ entry.entry_type }}</td>
+                <td>RWF {{ entry.amount }}</td>
+                <td>{{ entry.created_by.username }}</td>
+                <td>
+                    <a href="{% url 'core:journal_edit' entry.id %}" class="btn btn-warning btn-sm">Edit</a>
+                    <a href="{% url 'core:journal_delete' entry.id %}" class="btn btn-danger btn-sm">Delete</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="text-center">No journal entries yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

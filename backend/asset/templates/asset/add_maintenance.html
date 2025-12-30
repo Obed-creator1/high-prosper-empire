@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Maintenance - High Prosper Services{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h1>Add Maintenance</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}  # Assume MaintenanceForm in forms.py
+        <button type="submit" class="btn btn-primary">Save Maintenance</button>
+    </form>
+</div>
+{% endblock %}

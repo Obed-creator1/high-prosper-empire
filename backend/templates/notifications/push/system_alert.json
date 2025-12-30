@@ -1,0 +1,11 @@
+{
+  "title": "System Alert ⚠️",
+  "body": "{{ message }}",
+  "icon": "/static/images/logo-192.png",
+  "vibrate": [500, 200, 500],
+  "requireInteraction": true,
+  "data": {
+    "url": "{{ url|default:'/dashboard' }}",
+    "notification_type": "alert"
+  }
+}

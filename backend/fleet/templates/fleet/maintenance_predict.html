@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Fleet Maintenance Predictive Analytics - High Prosper Services{% endblock %}
+
+{% block extra_css %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2>Fleet Maintenance Predictive Analytics</h2>
+  <p>AI-powered forecast of next 6 months' maintenance costs based on historical data.</p>
+
+  <div class="card mb-4">
+    <div class="card-body">
+      <h5>Total Historical Cost: RWF {{ total_historical_cost|floatformat:2 }}</h5>
+      <h5>Predicted Total (Next 6 Months): RWF {{ predicted_total|floatformat:2 }}</h5>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <canvas id="predictChart" aria-label="Line chart of historical and predicted maintenance costs"></canvas>
+    </div>
+  </div>
+
+  <div class="mt-3">
+    <a href="{% url 'fleet:vehicle_list' %}" class="btn btn-primary"><i class="fas fa-car me-1"></i> View Fleet</a>
+    <a href="{% url 'fleet:repair_list' %}" class="btn btn-primary"><i class="fas fa-tools me-1"></i> View Repairs</a>
+  </div>
+</div>
+
+<script>
+  const ctx = document.getElementById('predictChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: {{ historical_labels|safe }},
+      datasets: [
+        {
+          label: 'Historical Costs',
+          data: {{ historical_costs|safe }},
+          backgroundColor: 'rgba(25, 135, 84, 0.2)',
+          borderColor: 'rgba(25, 135, 84, 1)',
+          fill: true,
+          tension: 0.1
+        },
+        {
+          label: 'Predicted Costs',
+          data: {{ predicted_costs|safe }},
+          backgroundColor: 'rgba(54, 162, 235, 0.2)',
+          borderColor: 'rgba(54, 162, 235, 1)',
+          fill: false,
+          tension: 0.1,
+          borderDash: [5, 5]
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: { display: true, text: 'Cost (RWF)' }
+        },
+        x: {
+          title: { display: true, text: 'Month' }
+        }
+      },
+      plugins: {
+        title: { display: true, text: 'Maintenance Cost Forecast' },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return `RWF ${context.raw.toFixed(2)}`;
+            }
+          }
+        }
+      }
+    }
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,141 @@
+Row 2: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 3: FPR INKOTANYI - default email customer250788563302@example.com; Imported/Updated with defaults.
+Row 4: Invalid phone number '78777898' after normalization
+Row 5: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 6: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 7: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 8: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 9: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 10: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 11: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 12: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 13: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 14: MUTWARE HARDWARE - default email customer250788484171@example.com; Imported/Updated with defaults.
+Row 15: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 16: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 17: FATAKI BENJAMIN - default email customer250788575443@example.com; Imported/Updated with defaults.
+Row 18: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 19: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 20: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 21: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 22: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 23: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 24: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 25: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 26: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 27: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 28: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 29: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 30: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 31: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 32: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 33: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 34: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 35: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 36: RUKUNDO ISHIMWE  THIERRY - default email customer250788357669@example.com; Imported/Updated with defaults.
+Row 37: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 38: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 39: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 40: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 41: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 42: UWIMANA CARINE - default email customer250788547388@example.com; Imported/Updated with defaults.
+Row 43: YES SHOP GAS - default email customer250781306106@example.com; Imported/Updated with defaults.
+Row 44: YGIS CONTRUCTION - default email customer250783831311@example.com; Imported/Updated with defaults.
+Row 45: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 46: SAIDAT  CHANTAL - default email customer250788849074@example.com; Imported/Updated with defaults.
+Row 47: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 48: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 49: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 50: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 51: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 52: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 53: ROTH PHARMACY - default email customer250788651705@example.com; Imported/Updated with defaults.
+Row 54: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 55: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 56: NISHIMWE CAKES - default email customer250781010415@example.com; Imported/Updated with defaults.
+Row 57: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 58: ADELINE INGABIRE - default email customer250780075393@example.com; Imported/Updated with defaults.
+Row 59: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 60: KABATESI JEANNE - default email customer250782282747@example.com; Imported/Updated with defaults.
+Row 61: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 62: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 63: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 64: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 65: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 66: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 67: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 68: UWITONZE ERIC - default email customer250781263246@example.com; Imported/Updated with defaults.
+Row 69: MEGHAN SALON - default email customer250786351130@example.com; Imported/Updated with defaults.
+Row 70: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 71: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 72: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 73: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 74: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 75: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 76: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 77: NSENGIYUMVA INNOCENT ( MUSHI ) - default email customer250786047390@example.com; Imported/Updated with defaults.
+Row 78: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 79: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 80: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 81: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 82: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 83: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 84: KWIZERA HONOLE - default email customer250785481786@example.com; Imported/Updated with defaults.
+Row 85: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 86: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 87: NIYONSABA J.M.V - default email customer250784083043@example.com; Imported/Updated with defaults.
+Row 88: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 89: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 90: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 91: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 92: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 93: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 94: NYAMATA DRIVING SCHOOL - default email customer250785758982@example.com; Imported/Updated with defaults.
+Row 95: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 96: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 97: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 98: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 99: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 100: HABIMANA EMMANUEL - default email customer250788979671@example.com; Imported/Updated with defaults.
+Row 101: MUNDANIKURE FELIX  - default email customer250788642317@example.com; Imported/Updated with defaults.
+Row 102: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 103: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 104: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 105: UWASE SANDRINE - default email customer250787378919@example.com; Imported/Updated with defaults.
+Row 106: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 107: NDIBANJE GELARD - default email customer250785664259@example.com; Imported/Updated with defaults.
+Row 108: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 109: WILLIAM SHOP - default email customer250788870116@example.com; Imported/Updated with defaults.
+Row 110: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 111: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 112: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 113: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 114: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 115: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 116: KAYITESI JOSELINE - default email customer250783117251@example.com; Imported/Updated with defaults.
+Row 117: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 118: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 119: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 120: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 121: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 122: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 123: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 124: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 125: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 126: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 127: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 128: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 129: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 130: TUYAMBAJE FRANCOISE - default email customer250788488530@example.com; Imported/Updated with defaults.
+Row 131: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 132: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 133: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 134: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 135: MUSHIMIYIMANA J.ARC - default email customer250788202219@example.com; Imported/Updated with defaults.
+Row 136: TUMUSIFU INNOCENT - default email customer250784881645@example.com; Imported/Updated with defaults.
+Row 137: UMUBYEYI CLAIRE - default email customer250788879276@example.com; Imported/Updated with defaults.
+Row 138: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 139: UserProfile() got unexpected keyword arguments: 'role', 'group'
+Row 140: MBANZA DANIEL - default email customer250788242995@example.com; Imported/Updated with defaults.
+Row 141: ECOLE RACHARTE - default email customer250789438609@example.com; Imported/Updated with defaults.
+Row 142: LA CHALITE - default email customer250791979657@example.com; Imported/Updated with defaults.

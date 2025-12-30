@@ -1,0 +1,16 @@
+{
+  "title": "Account Status Update",
+  "body": "Your status is now {{ status }}",
+  "icon": "/static/images/logo-192.png",
+  "badge": "/static/images/badge.png",
+  "vibrate": [200, 100, 200],
+  "actions": [
+    {
+      "action": "open_profile",
+      "title": "View Profile"
+    }
+  ],
+  "data": {
+    "url": "/dashboard/profile/"
+  }
+}

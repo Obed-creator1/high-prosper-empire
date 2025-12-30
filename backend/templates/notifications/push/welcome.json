@@ -1,0 +1,15 @@
+{
+  "title": "Welcome to High Prosper! 🎉",
+  "body": "You're now connected to real-time updates.\nThank you for joining us.",
+  "icon": "/static/images/logo-192.png",
+  "image": "/static/images/welcome.jpg",
+  "actions": [
+    {
+      "action": "open_dashboard",
+      "title": "Go to Dashboard"
+    }
+  ],
+  "data": {
+    "url": "/dashboard"
+  }
+}

@@ -1,0 +1,57 @@
+<!-- backend/templates/pdf/po_template.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 40px; color: #333; }
+        .header { text-align: center; border-bottom: 4px solid #1e40af; padding-bottom: 20px; }
+        .title { font-size: 36px; color: #1e40af; margin: 0; }
+        .po-number { font-size: 24px; color: #1e40af; }
+        table { width: 100%; border-collapse: collapse; margin: 30px 0; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #172554; color: white; }
+        .total { background-color: #1e40af; color: white; font-size: 18px; }
+    </style>
+</head>
+<body>
+<div class="header">
+    <h1 class="title">PURCHASE ORDER</h1>
+    <h2 class="po-number">{{ po.po_number }}</h2>
+</div>
+
+<p><strong>Supplier:</strong> {{ po.supplier.name }}<br>
+    <strong>Date:</strong> {{ po.order_date }} | <strong>Expected:</strong> {{ po.expected_delivery_date }}</p>
+
+<table>
+    <thead>
+    <tr>
+        <th>#</th>
+        <th>Description</th>
+        <th>Qty</th>
+        <th>Unit Price</th>
+        <th>Total</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for item in po.items.all %}
+    <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>{{ item.item.sku|default:"—" }} {{ item.description }}</td>
+        <td>{{ item.quantity_ordered }}</td>
+        <td>${{ item.unit_price }}</td>
+        <td>${{ item.line_total }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+    <tfoot>
+    <tr class="total">
+        <td colspan="4"><strong>TOTAL AMOUNT</strong></td>
+        <td><strong>{{ po.currency }} {{ po.grand_total|floatformat:2 }}</strong></td>
+    </tr>
+    </tfoot>
+</table>
+
+<p><strong>Delivery Address:</strong> {{ po.delivery_address }}</p>
+<p><strong>Payment Terms:</strong> {{ po.payment_terms|default:"Net 30" }}</p>
+</body>
+</html>

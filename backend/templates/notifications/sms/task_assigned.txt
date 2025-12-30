@@ -1,0 +1,5 @@
+New Task Assigned
+{{ task.title }}
+{{ task.description|truncatewords:15 }}
+Due: {{ task.due_date|date:"d/m/Y" }}
+View: {{ task_url }}

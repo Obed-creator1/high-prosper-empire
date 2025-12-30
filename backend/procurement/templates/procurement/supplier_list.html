@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Suppliers</h2>
+    <a href="{% url 'procurement:supplier_create' %}" class="btn btn-primary mb-3">+ Add Supplier</a>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>ID</th><th>Name</th><th>Contact</th><th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for supplier in suppliers %}
+            <tr>
+                <td>{{ supplier.id }}</td>
+                <td>{{ supplier.name }}</td>
+                <td>{{ supplier.contact }}</td>
+                <td>
+                    <a href="{% url 'procurement:supplier_update' supplier.id %}" class="btn btn-sm btn-warning">Edit</a>
+                    <a href="{% url 'procurement:supplier_delete' supplier.id %}" class="btn btn-sm btn-danger">Delete</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-center">No suppliers</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

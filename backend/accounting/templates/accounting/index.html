@@ -1,0 +1,98 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static %}
+{% block title %}Accounting Dashboard{% endblock %}
+{% block sidebar_color %}#198754{% endblock %}
+{% block sidebar_title %}Accounting{% endblock %}
+{% block page_title %}Accounting Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Sidebar -->
+    <div class="col-md-3">
+        <div class="list-group shadow-sm">
+            <a href="{% url 'accounting:dashboard' %}" class="list-group-item list-group-item-action active">
+                <i class="fas fa-chart-line me-2"></i> Overview
+            </a>
+            <a href="{% url 'accounting:journal_list' %}" class="list-group-item list-group-item-action">
+                <i class="fas fa-book me-2"></i> Journals
+            </a>
+            <a href="#" class="list-group-item list-group-item-action">
+                <i class="fas fa-hand-holding-usd me-2"></i> Revenues & Expenses
+            </a>
+            <a href="#" class="list-group-item list-group-item-action">
+                <i class="fas fa-file-invoice-dollar me-2"></i> Receivables
+            </a>
+            <a href="#" class="list-group-item list-group-item-action">
+                <i class="fas fa-credit-card me-2"></i> Payables
+            </a>
+            <a href="#" class="list-group-item list-group-item-action">
+                <i class="fas fa-balance-scale me-2"></i> General Ledger
+            </a>
+            <a href="#" class="list-group-item list-group-item-action">
+                <i class="fas fa-file-alt me-2"></i> Financial Statements
+            </a>
+            <a href="#" class="list-group-item list-group-item-action">
+                <i class="fas fa-truck me-2"></i> Fleet Management & Repairs
+            </a>
+            <a href="#" class="list-group-item list-group-item-action">
+                <i class="fas fa-boxes me-2"></i> Stock & Procurement
+            </a>
+            <a href="#" class="list-group-item list-group-item-action">
+                <i class="fas fa-warehouse me-2"></i> Asset Management
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="col-md-9">
+        <!-- Cards -->
+        {% include "dashboard/partials/_cards.html" with cards=accounting_cards %}
+
+        <!-- Chart -->
+        <div class="card mb-4 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">📈 Monthly Cash Flow</h5>
+                {% include "dashboard/partials/_chart.html" with
+                    chart_id="finance_chart" chart_type="line" title="Monthly Cash Flow"
+                    labels=month_labels data=cash_flow dataset_label="Cash Flow"
+                    bg_color="rgba(25,135,84,0.5)" border_color="rgba(25,135,84,1)" %}
+            </div>
+        </div>
+
+        <!-- Journal Entries -->
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">📝 Recent Journal Entries</h5>
+                <table class="table table-striped table-hover">
+                    <thead class="table-success">
+                        <tr>
+                            <th>Date</th>
+                            <th>Description</th>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>Created By</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for entry in recent_entries %}
+                    <tr>
+                        <td>{{ entry.date }}</td>
+                        <td>{{ entry.description }}</td>
+                        <td>{{ entry.entry_type }}</td>
+                        <td>{{ entry.amount }}</td>
+                        <td>{{ entry.created_by.username }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5" class="text-center">No journal entries yet.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'accounting:journal_list' %}" class="btn btn-outline-secondary">📑 View All</a>
+                    <a href="{% url 'accounting:add_journal_entry' %}" class="btn btn-success">➕ Add Entry</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

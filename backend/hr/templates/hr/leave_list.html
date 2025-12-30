@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Manage Leaves - High Prosper Services{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+<style>
+    .table-container {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        padding: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-calendar-times me-2 text-primary"></i>Manage Leaves</h1>
+        <a href="{% url 'hr:leave_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Add Leave
+        </a>
+    </div>
+    <div class="table-container">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+        <table id="leaveTable" class="table table-striped">
+            <thead class="table-dark">
+                <tr>
+                    <th>Employee</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for leave in leave_list %}
+                <tr>
+                    <td>{{ leave.employee.user.get_full_name|default:leave.employee.user.username }}</td>
+                    <td>{{ leave.start_date|date:"Y-m-d" }}</td>
+                    <td>{{ leave.end_date|date:"Y-m-d" }}</td>
+                    <td>{{ leave.status }}</td>
+                    <td>
+                        <a href="{% url 'hr:leave_edit' leave.id %}" class="btn btn-sm btn-warning btn-action" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a href="{% url 'hr:leave_delete' leave.id %}" class="btn btn-sm btn-danger btn-action" title="Delete" onclick="return confirm('Are you sure you want to delete this leave request?');">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('#leaveTable').DataTable();
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Performance - High Prosper Services{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+<style>
+    body { background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); font-family: 'Roboto', sans-serif; }
+    .card { border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="container-fluid px-4 py-4">
+    <div class="card shadow">
+        <div class="card-header bg-light">
+            <h5 class="mb-0"><i class="fas fa-chart-bar me-2 text-primary"></i>Performance Overview</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover">
+                    <thead>
+                        <tr>
+                            <th>Period</th>
+                            <th>Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in performance_data %}
+                        <tr>
+                            <td>{{ item.week }}</td>
+                            <td>{{ item.score }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="2" class="text-center text-muted">No performance data available</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}

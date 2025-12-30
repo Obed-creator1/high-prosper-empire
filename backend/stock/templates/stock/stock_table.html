@@ -1,0 +1,27 @@
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Item</th>
+            <th>Quantity</th>
+            <th>Price</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in items %}
+        <tr>
+            <td>{{ item.item }}</td>
+            <td>{{ item.quantity }}</td>
+            <td>{{ item.price }}</td>
+            <td>
+                <a href="{% url 'stock:stock_edit' item.pk %}" class="btn btn-sm btn-primary">Edit</a>
+                <a href="{% url 'stock:stock_delete' item.pk %}" class="btn btn-sm btn-danger">Delete</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="4">No items found.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

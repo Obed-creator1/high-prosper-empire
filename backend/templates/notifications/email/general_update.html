@@ -1,0 +1,8 @@
+{% extends "notifications/email/base.html" %}
+
+{% block content %}
+<p>Dear {{ user.get_full_name|default:user.username }},</p>
+<p>{{ message }}</p>
+<p>Please check your dashboard for more details.</p>
+<p><a href="{{ dashboard_url }}" class="button">View Dashboard</a></p>
+{% endblock %}

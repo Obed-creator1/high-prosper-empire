@@ -1,0 +1,212 @@
+{% extends "admin/change_form.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    .invoice-header {
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        color: white;
+        padding: 2rem;
+        border-radius: 12px;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+    .invoice-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin: 2rem 0;
+    }
+    .stat-card {
+        background: #1e293b;
+        padding: 1.5rem;
+        border-radius: 12px;
+        text-align: center;
+        border: 2px solid #334155;
+    }
+    .stat-value {
+        font-size: 2.5rem;
+        font-weight: bold;
+    }
+    .positive { color: #10b981; }
+    .negative { color: #ef4444; }
+    .neutral { color: #8b5cf6; }
+    .pdf-preview {
+        margin: 2rem 0;
+        text-align: center;
+    }
+    .pdf-frame {
+        width: 100%;
+        height: 800px;
+        border: 2px solid #334155;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin: 2rem 0;
+    }
+    .btn {
+        padding: 1rem 2rem;
+        border-radius: 8px;
+        font-weight: bold;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .btn-primary { background: #8b5cf6; color: white; }
+    .btn-success { background: #10b981; color: white; }
+    .btn-warning { background: #f59e0b; color: white; }
+    .btn-info { background: #3b82f6; color: white; }
+</style>
+{% endblock %}
+
+{% block content_title %}
+<div class="invoice-header">
+    <h1>Invoice {{ original.uid|upper }}</h1>
+    <p class="text-xl opacity-90">
+        Customer: <strong>{{ original.customer.name }}</strong> •
+        Account: <strong>{{ original.customer.payment_account }}</strong>
+    </p>
+    <p class="text-lg mt-2">
+        Period: {{ original.period_month }}/{{ original.period_year }} •
+        Due: {{ original.due_date }}
+    </p>
+</div>
+{% endblock %}
+
+{% block form_top %}
+<div class="invoice-stats">
+    <div class="stat-card">
+        <p>Invoice Amount</p>
+        <p class="stat-value neutral">RWF {{ original.amount|floatformat:0|intcomma }}</p>
+    </div>
+    <div class="stat-card">
+        <p>Paid Amount</p>
+        <p class="stat-value positive">RWF {{ original.paid_amount|floatformat:0|intcomma }}</p>
+    </div>
+    <div class="stat-card">
+        <p>Remaining Balance</p>
+        <p class="stat-value {% if original.remaining > 0 %}negative{% elif original.remaining < 0 %}positive{% else %}neutral{% endif %}">
+            RWF {{ original.remaining|floatformat:0|intcomma }}
+        </p>
+        <p class="text-sm mt-2">
+            {% if original.remaining > 0 %}Customer Owes
+            {% elif original.remaining < 0 %}Overpaid
+            {% else %}Paid in Full{% endif %}
+        </p>
+    </div>
+    <div class="stat-card">
+        <p>Status</p>
+        <p class="stat-value">
+      <span class="px-6 py-3 rounded-full text-white font-bold
+        {% if original.status == 'Paid' %}bg-green-600
+        {% elif original.status == 'Overdue' %}bg-red-600
+        {% else %}bg-yellow-600{% endif %}">
+        {{ original.get_status_display }}
+      </span>
+        </p>
+    </div>
+</div>
+
+<!-- PDF Preview Inline -->
+{% if original.pdf_file %}
+<div class="pdf-preview">
+    <h3 class="text-3xl font-bold mb-6">Invoice PDF Preview</h3>
+    <iframe
+            src="{{ original.pdf_file.url }}#toolbar=1&navpanes=0&scrollbar=1"
+            class="pdf-frame"
+            title="Invoice PDF Preview">
+    </iframe>
+    <p class="mt-4 text-lg opacity-80">
+        <a href="{{ original.pdf_file.url }}" target="_blank" class="text-cyan-400 hover:underline">
+            Open in new tab • Download
+        </a>
+    </p>
+</div>
+{% else %}
+<div class="pdf-preview">
+    <p class="text-2xl text-gray-500">PDF not generated yet. Save invoice to create PDF.</p>
+</div>
+{% endif %}
+
+<!-- QR Code & Payment Links -->
+<div class="text-center my-12">
+    <h3 class="text-3xl font-bold mb-8">Customer Payment Options</h3>
+    {% if original.uid %}
+    <img
+            src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https://app.highprosper.africa/pay/{{ original.uid }}"
+            alt="Payment QR Code"
+            class="mx-auto border-8 border-white rounded-2xl shadow-2xl"
+    />
+    <p class="mt-6 text-xl">Scan with phone to pay instantly</p>
+    {% endif %}
+</div>
+
+<div class="action-buttons">
+    {% if original.uid %}
+    <a href="https://app.highprosper.africa/pay/{{ original.uid }}" target="_blank" class="btn btn-primary">
+        💳 Pay with HPC / QR
+    </a>
+    <a href="https://wa.me/?text=Pay%20your%20High%20Prosper%20invoice%3A%20https%3A//app.highprosper.africa/pay/{{ original.uid }}"
+       target="_blank" class="btn btn-success">
+        📱 Send via WhatsApp
+    </a>
+    <a href="sms:?body=Pay%20RWF%20{{ original.amount }}%20-%20https%3A//app.highprosper.africa/pay/{{ original.uid }}"
+       class="btn btn-warning">
+        ✉️ Send via SMS
+    </a>
+    {% if original.pdf_file %}
+    <a href="{{ original.pdf_file.url }}" target="_blank" class="btn btn-info">
+        📄 Download PDF
+    </a>
+    {% endif %}
+    {% endif %}
+    <a href="{% url 'admin:payments_invoice_changelist' %}" class="btn btn-danger">
+        ← Back to List
+    </a>
+</div>
+{% endblock %}
+
+{% block after_field_sets %}
+{{ block.super }}
+<div class="module">
+    <h2>Recent Payments</h2>
+    {% if original.payments.exists %}
+    <table class="table">
+        <thead>
+        <tr>
+            <th>Date</th>
+            <th>Amount</th>
+            <th>Method</th>
+            <th>Status</th>
+            <th>Reference</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for payment in original.payments.all|slice:":10" %}
+        <tr>
+            <td>{{ payment.completed_at|date:"d M Y H:i" }}</td>
+            <td>RWF {{ payment.amount|intcomma }}</td>
+            <td>{{ payment.method.get_name_display }}</td>
+            <td>
+            <span class="{% if payment.status == 'Successful' %}text-green-600{% else %}text-red-600{% endif %} font-bold">
+              {{ payment.get_status_display }}
+            </span>
+            </td>
+            <td><code>{{ payment.reference }}</code></td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No payments yet.</p>
+    {% endif %}
+</div>
+{% endblock %}

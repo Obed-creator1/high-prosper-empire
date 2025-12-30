@@ -1,0 +1,7 @@
+*High Prosper Update*
+{{ message }}
+
+Check your dashboard: {{ dashboard_url }}
+
+High Prosper Services Ltd
++250 785 340 438

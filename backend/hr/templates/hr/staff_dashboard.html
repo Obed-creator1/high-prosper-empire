@@ -1,0 +1,629 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Staff Dashboard - High Prosper Services Ltd{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --primary-color: #007bff;
+        --success-color: #28a745;
+        --warning-color: #ffc107;
+        --danger-color: #dc3545;
+        --info-color: #17a2b8;
+        --secondary-color: #6c757d;
+        --dark-color: #343a40;
+        --light-color: #f8f9fa;
+    }
+    body {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        font-family: 'Roboto', sans-serif;
+        color: #333;
+    }
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width: 250px;
+        background: linear-gradient(180deg, var(--primary-color) 0%, #495057 100%);
+        color: white;
+        transition: width 0.3s ease;
+        z-index: 1000;
+        overflow-y: auto;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.2);
+    }
+    .sidebar.collapsed {
+        width: 60px;
+    }
+    .sidebar .nav-link {
+        color: rgba(255,255,255,0.9);
+        padding: 0.8rem 1rem;
+        border-radius: 6px;
+        margin: 0.3rem 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transition: background 0.2s, color 0.2s;
+    }
+    .sidebar .nav-link:hover, .sidebar .nav-link.active {
+        background-color: var(--dark-color);
+        color: white;
+    }
+    .sidebar.collapsed .nav-link span {
+        display: none;
+    }
+    .sidebar.collapsed .nav-link {
+        justify-content: center;
+    }
+    .main-content {
+        margin-left: 250px;
+        transition: margin-left 0.3s ease;
+        min-height: 100vh;
+        padding: 20px;
+    }
+    .main-content.expanded {
+        margin-left: 60px;
+    }
+    .navbar {
+        background: #fff;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        padding: 10px 20px;
+    }
+    .navbar-brand {
+        font-family: 'Poppins', sans-serif;
+        font-weight: 600;
+        color: var(--primary-color);
+    }
+    .stat-card {
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        transition: transform 0.3s, box-shadow 0.3s;
+        border-left: 4px solid var(--primary-color);
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .stat-icon {
+        font-size: 2.5rem;
+        color: var(--primary-color);
+        opacity: 0.9;
+    }
+    .management-card {
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        margin-bottom: 1.5rem;
+    }
+    .management-card h5 {
+        font-family: 'Poppins', sans-serif;
+        color: var(--primary-color);
+    }
+    .status-badge {
+        font-size: 0.8rem;
+        padding: 0.4rem 0.8rem;
+        border-radius: 12px;
+    }
+    .table-actions .btn {
+        padding: 0.3rem 0.6rem;
+        font-size: 0.9rem;
+        border-radius: 4px;
+    }
+    .chart-container {
+        background: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .quick-actions .btn {
+        margin: 0.5rem;
+        transition: transform 0.2s;
+        border-radius: 6px;
+    }
+    .quick-actions .btn:hover {
+        transform: scale(1.05);
+    }
+    .profile-photo {
+        max-width: 150px;
+        border-radius: 8px;
+    }
+    @media (max-width: 768px) {
+        .sidebar {
+            width: 0;
+            overflow: hidden;
+        }
+        .main-content {
+            margin-left: 0;
+        }
+        .stat-card, .management-card {
+            margin-bottom: 1rem;
+        }
+        .profile-photo {
+            max-width: 100px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Sidebar -->
+<nav class="sidebar d-md-block" id="sidebar">
+    <div class="position-sticky pt-3">
+        <h5 class="text-center text-white mb-3">Staff Dashboard</h5>
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link active" href="{% url 'hr:staff_dashboard' %}">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span class="d-none d-md-inline">Dashboard</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'hr:staff_profile' request.user.staff_profile.id %}">
+                    <i class="fas fa-user"></i>
+                    <span class="d-none d-md-inline">My Profile</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'hr:my_tasks' %}">
+                    <i class="fas fa-tasks"></i>
+                    <span class="d-none d-md-inline">My Tasks</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'hr:leaves' %}">
+                    <i class="fas fa-plane-departure"></i>
+                    <span class="d-none d-md-inline">Leave Requests</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'hr:attendance' %}">
+                    <i class="fas fa-calendar-check"></i>
+                    <span class="d-none d-md-inline">Attendance</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'hr:complaints' %}">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span class="d-none d-md-inline">Complaints</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'hr:loan_requests' %}">
+                    <i class="fas fa-hand-holding-dollar"></i>
+                    <span class="d-none d-md-inline">Loan Requests</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'hr:missions' %}">
+                    <i class="fas fa-briefcase"></i>
+                    <span class="d-none d-md-inline">Missions</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'hr:extra_work' %}">
+                    <i class="fas fa-clock"></i>
+                    <span class="d-none d-md-inline">Extra Work</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'hr:vacation' %}">
+                    <i class="fas fa-umbrella-beach"></i>
+                    <span class="d-none d-md-inline">Vacation</span>
+                </a>
+            </li>
+            <li class="nav-item mt-auto">
+                <a class="nav-link" href="#" onclick="confirmLogout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span class="d-none d-md-inline">Logout</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<!-- Main Content -->
+<main class="main-content" id="main-content">
+    <!-- Top Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container-fluid">
+            <button class="navbar-toggler d-md-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <button class="btn btn-link d-md-none d-lg-none me-2" id="sidebarToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <a class="navbar-brand" href="{% url 'hr:staff_dashboard' %}">
+                <i class="fas fa-rocket"></i> High Prosper Services
+            </a>
+            <form class="d-flex me-auto" method="GET" action="{% url 'hr:search' %}">
+                <input class="form-control me-2" type="search" placeholder="Search tasks, leaves..." name="q" aria-label="Search">
+                <button class="btn btn-outline-primary" type="submit">
+                    <i class="fas fa-search"></i>
+                </button>
+            </form>
+            <div class="dropdown">
+                <a class="nav-link dropdown-toggle" href="#" role="button" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    {% if request.user.staff_profile.profile_photo %}
+                        <img src="{{ request.user.staff_profile.profile_photo.url }}" alt="Profile" class="rounded-circle" style="width: 30px; height: 30px;">
+                    {% else %}
+                        <img src="{% static 'images/default_profile.png' %}" alt="Profile" class="rounded-circle" style="width: 30px; height: 30px;">
+                    {% endif %}
+                    {{ request.user.get_full_name|default:request.user.username }}
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
+                    <li><a class="dropdown-item" href="{% url 'hr:staff_profile' request.user.staff_profile.id %}">Profile</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="confirmLogout()">Logout</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Dashboard Content -->
+    <div class="container-fluid px-4 py-4">
+        <!-- Profile Overview -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card management-card shadow">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-user me-2 text-primary"></i>My Profile</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-3 text-center">
+                                {% if request.user.staff_profile.profile_photo %}
+                                    <img src="{{ request.user.staff_profile.profile_photo.url }}" alt="Profile Photo" class="profile-photo mb-3">
+                                {% else %}
+                                    <img src="{% static 'images/default_profile.png' %}" alt="Default Profile" class="profile-photo mb-3">
+                                {% endif %}
+                                <h5>{{ request.user.get_full_name|default:request.user.username }}</h5>
+                                <span class="badge bg-{{ request.user.staff_profile.status|lower }}">{{ request.user.staff_profile.status }}</span>
+                            </div>
+                            <div class="col-md-9">
+                                <p><strong>Department:</strong> {{ request.user.staff_profile.department|default:"N/A" }}</p>
+                                <p><strong>Salary:</strong> RWF {{ request.user.staff_profile.salary|floatformat:2 }}</p>
+                                <p><strong>Email:</strong> {{ request.user.email }}</p>
+                                <p><strong>Contract:</strong>
+                                    {% if request.user.staff_profile.contract_file %}
+                                        <a href="{{ request.user.staff_profile.contract_file.url }}" target="_blank" class="btn btn-sm btn-info">
+                                            <i class="fas fa-file-pdf me-1"></i>View Contract
+                                        </a>
+                                    {% else %}
+                                        No contract file
+                                    {% endif %}
+                                </p>
+                                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#uploadDocumentModal">
+                                    <i class="fas fa-upload me-1"></i>Upload Document
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="row mb-4 quick-actions">
+            <div class="col-12">
+                <div class="card shadow">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-bolt me-2 text-primary"></i>Quick Actions</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-2 col-sm-6 mb-3">
+                                <a href="{% url 'hr:request_leave' %}" class="btn btn-primary w-100">
+                                    <i class="fas fa-plane-departure me-2"></i>Request Leave
+                                </a>
+                            </div>
+                            <div class="col-md-2 col-sm-6 mb-3">
+                                <a href="{% url 'hr:submit_complaint' %}" class="btn btn-warning w-100">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>Submit Complaint
+                                </a>
+                            </div>
+                            <div class="col-md-2 col-sm-6 mb-3">
+                                <a href="{% url 'hr:request_loan' %}" class="btn btn-info w-100">
+                                    <i class="fas fa-hand-holding-dollar me-2"></i>Request Loan
+                                </a>
+                            </div>
+                            <div class="col-md-2 col-sm-6 mb-3">
+                                <button class="btn btn-success w-100" data-bs-toggle="modal" data-bs-target="#uploadDocumentModal">
+                                    <i class="fas fa-upload me-2"></i>Upload Document
+                                </a>
+                            </div>
+                            <div class="col-md-2 col-sm-6 mb-3">
+                                <a href="{% url 'hr:my_tasks' %}" class="btn btn-secondary w-100">
+                                    <i class="fas fa-tasks me-2"></i>View Tasks
+                                </a>
+                            </div>
+                            <div class="col-md-2 col-sm-6 mb-3">
+                                <a href="{% url 'hr:report_to_admin' %}" class="btn btn-danger w-100">
+                                    <i class="fas fa-envelope me-2"></i>Report to Admin
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Overview -->
+        <div class="row mb-4">
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card stat-card border-left-primary h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Tasks Assigned</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_tasks|default:0 }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-tasks stat-icon"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card stat-card border-left-success h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Tasks Completed</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ completed_tasks|default:0 }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-check-circle stat-icon"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card stat-card border-left-warning h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Pending Leaves</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ pending_leaves|default:0 }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-plane-departure stat-icon"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card stat-card border-left-info h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Attendance Rate</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ attendance_rate|default:"0%" }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-calendar-check stat-icon"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance & Tasks -->
+        <div class="row mb-4">
+            <div class="col-xl-6 col-lg-12 mb-4">
+                <div class="card chart-container shadow">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-chart-bar me-2 text-success"></i>Task Progress</h5>
+                    </div>
+                    <div class="card-body">
+                        {% include "dashboard/partials/_chart.html" with
+                            chart_id="tasks_chart" chart_type="bar" title="Task Progress"
+                            labels=task_labels data=task_data dataset_label="Tasks Completed"
+                            bg_color="rgba(25,135,84,0.5)" border_color="rgba(25,135,84,1)" %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-6 col-lg-12 mb-4">
+                <div class="card management-card shadow">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-tasks me-2 text-primary"></i>My Tasks</h5>
+                    </div>
+                    <div class="card-body">
+                        {% include "dashboard/partials/tasks_table.html" %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Attendance & Leaves -->
+        <div class="row mb-4">
+            <div class="col-xl-6 col-lg-12 mb-4">
+                <div class="card management-card shadow">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-calendar-check me-2 text-info"></i>Attendance</h5>
+                    </div>
+                    <div class="card-body">
+                        {% include "dashboard/partials/attendance_table.html" %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-6 col-lg-12 mb-4">
+                <div class="card management-card shadow">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-plane-departure me-2 text-warning"></i>Leave Requests</h5>
+                    </div>
+                    <div class="card-body">
+                        {% include "dashboard/partials/leaves_table.html" %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Missions & Extra Work -->
+        <div class="row mb-4">
+            <div class="col-xl-6 col-lg-12 mb-4">
+                <div class="card management-card shadow">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-briefcase me-2 text-primary"></i>Missions</h5>
+                    </div>
+                    <div class="card-body">
+                        {% include "dashboard/partials/missions_table.html" %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-6 col-lg-12 mb-4">
+                <div class="card management-card shadow">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-clock me-2 text-secondary"></i>Extra Work</h5>
+                    </div>
+                    <div class="card-body">
+                        {% include "dashboard/partials/extra_work_table.html" %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Complaints & Loans -->
+        <div class="row mb-4">
+            <div class="col-xl-6 col-lg-12 mb-4">
+                <div class="card management-card shadow">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2 text-danger"></i>Complaints</h5>
+                    </div>
+                    <div class="card-body">
+                        {% include "dashboard/partials/complaints_table.html" %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-6 col-lg-12 mb-4">
+                <div class="card management-card shadow">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-hand-holding-dollar me-2 text-info"></i>Loan Requests</h5>
+                    </div>
+                    <div class="card-body">
+                        {% include "dashboard/partials/loan_requests_table.html" %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vacation & Reports -->
+        <div class="row mb-4">
+            <div class="col-xl-6 col-lg-12 mb-4">
+                <div class="card management-card shadow">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-umbrella-beach me-2 text-success"></i>Vacation</h5>
+                    </div>
+                    <div class="card-body">
+                        {% include "dashboard/partials/vacation_table.html" %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-6 col-lg-12 mb-4">
+                <div class="card management-card shadow">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-envelope me-2 text-primary"></i>Report to Admin/HR</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="post" action="{% url 'hr:report_to_admin' %}">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="reportSubject" class="form-label">Subject</label>
+                                <input type="text" class="form-control" id="reportSubject" name="subject" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="reportMessage" class="form-label">Message</label>
+                                <textarea class="form-control" id="reportMessage" name="message" rows="4" required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Send Report</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Document Upload Modal -->
+    <div class="modal fade" id="uploadDocumentModal" tabindex="-1" aria-labelledby="uploadDocumentModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="uploadDocumentModalLabel">Upload Document</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="post" action="{% url 'hr:upload_document' %}" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="profilePhoto" class="form-label">Profile Photo</label>
+                            <input type="file" class="form-control" id="profilePhoto" name="profile_photo" accept="image/*">
+                        </div>
+                        <div class="mb-3">
+                            <label for="contractFile" class="form-label">Contract File</label>
+                            <input type="file" class="form-control" id="contractFile" name="contract_file" accept=".pdf,.doc,.docx">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Upload</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logout Confirmation Modal -->
+    <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="logoutModalLabel">Confirm Logout</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to log out?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form method="post" action="{% url 'logout' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Logout</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function confirmLogout() {
+    const modal = new bootstrap.Modal(document.getElementById('logoutModal'));
+    modal.show();
+}
+document.addEventListener('DOMContentLoaded', function() {
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('main-content');
+    const toggleButton = document.getElementById('sidebarToggle');
+    if (toggleButton) {
+        toggleButton.addEventListener('click', function() {
+            sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('expanded');
+        });
+    }
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(function(alert) {
+        setTimeout(() => {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        }, 5000);
+    });
+});
+</script>
+{% endblock %}

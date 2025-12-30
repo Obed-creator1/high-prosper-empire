@@ -1,0 +1,4 @@
+Account Status Update
+Your status: {{ status }}
+Contact admin if needed.
+High Prosper

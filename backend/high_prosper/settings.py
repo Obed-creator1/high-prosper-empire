@@ -1,0 +1,538 @@
+import os
+from pathlib import Path
+from datetime import timedelta
+from dotenv import load_dotenv
+import logging
+from celery.schedules import crontab
+import warnings
+
+
+logging.getLogger("django.server").setLevel(logging.ERROR)
+
+
+load_dotenv()
+
+# Base directory
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+FIREBASE_CREDENTIALS_PATH = BASE_DIR / "firebase-service-account.json"
+
+# SECURITY
+SECRET_KEY = os.getenv('SECRET_KEY')
+DEBUG = True
+ALLOWED_HOSTS = [
+    "127.0.0.1",
+    "localhost",
+    '0225acc1eab5.ngrok-free.app',
+]
+
+# Applications
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'django_filters',  # for django-filters
+    'crispy_forms',
+    'crispy_bootstrap5',
+    'django_celery_beat',
+    'django_celery_results',
+    'django.contrib.humanize',
+    'django.contrib.postgres',
+
+    # Third-party
+    'rest_framework',
+    'rest_framework.authtoken',
+    'rest_framework_simplejwt',
+    'corsheaders',
+    'webpush',
+    'auditlog',
+    "softdelete",
+
+    # Local apps
+    'customers.apps.CustomersConfig',
+    'users',
+    'payments',
+    'notifications',
+    'hr',
+    'collector.apps.CollectorConfig',
+    'simple_history',
+    'django.contrib.gis',
+    'accounting',
+    'fleet',
+    'procurement',
+    'stock',
+    'reports',
+    'erp',
+    'asset',
+    'channels',
+    'dashboard',
+    'tenants',
+    'billing',
+
+    ]
+
+HUMANIZE_USE_THOUSANDS_SEPARATOR = True
+
+MTN_WHATSAPP_API_URL = 'https://api.mtn.com/whatsapp/v1/send'  # Replace with actual
+
+AUDITLOG_LOGENTRY_MODEL = 'auditlog.LogEntry'
+
+# Blockchain Settings
+WEB3_PROVIDER_URL = "https://polygon-amoy.g.alchemy.com/v2/YOUR_KEY"  # or mainnet
+INVOICE_CONTRACT_ADDRESS = "0xYourDeployedContractAddress"
+
+
+# Middleware
+MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'high_prosper.middleware.ContentTypeMiddleware',
+    'auditlog.middleware.AuditlogMiddleware',
+    'tenants.middleware.TenantMiddleware',
+]
+
+MIDDLEWARE.insert(0, "corsheaders.middleware.CorsMiddleware")
+
+# URL configuration
+ROOT_URLCONF = 'high_prosper.urls'
+
+# Templates
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],  # Optional templates folder
+        'APP_DIRS': True,  # Looks inside app templates automatically
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',  # Required by admin
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+                "users.context_processors.role_based_sidebar",
+                'hr.context_processors.notifications',
+            ],
+        },
+    },
+]
+
+# WSGI
+WSGI_APPLICATION = 'high_prosper.wsgi.application'
+
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+# settings.py — DATABASE CONFIGURATION WITH POSTGIS SUPPORT
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.contrib.gis.db.backends.postgis',
+        'NAME': 'high_prosper_db',
+        'USER': 'obed',
+        'PASSWORD': 'Obedxyz1!',  # ← Move to .env in production!
+        'HOST': 'localhost',
+        'PORT': '5432',
+        'OPTIONS': {
+            'options': '-c search_path=public -c statement_timeout=30000',  # 30s query timeout
+        },
+        'CONN_MAX_AGE': 600,                    # Keep connections alive 10 minutes
+        'CONN_HEALTH_CHECKS': True,             # Detect dead connections
+        'AUTOCOMMIT': True,
+        'DISABLE_SERVER_SIDE_CURSORS': False,   # Better for large querysets
+        'TEST': {
+            'NAME': 'test_high_prosper_db',     # Auto test DB
+        },
+    }
+}
+
+# Password validators
+AUTH_PASSWORD_VALIDATORS = [
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
+]
+
+AUTH_USER_MODEL = 'users.CustomUser'
+
+# Internationalization
+LANGUAGE_CODE = 'en-us'
+TIME_ZONE = 'Africa/Kigali'
+USE_I18N = True
+USE_TZ = True
+
+# Static files
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'staticfiles')]
+STATICFILES_FINDERS = [
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+]
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# ✅ REPORTS SPECIFIC SETTINGS
+REPORTS = {
+    'MAX_FILE_SIZE': 50 * 1024 * 1024,  # 50MB
+    'ALLOWED_FORMATS': ['pdf', 'excel', 'csv'],
+    'RETENTION_DAYS': 90,
+    'MAX_CONCURRENT_GENERATIONS': 5,
+}
+
+# WeasyPrint needs this
+WEASYPRINT_DPI = 300
+
+
+# Default primary key field type
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# CORS
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+CSRF_TRUSTED_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000"]
+CORS_ALLOW_CREDENTIALS = True
+
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+CRISPY_TEMPLATE_PACK = "bootstrap5"
+
+ASGI_APPLICATION = 'backend.asgi.application'
+
+# Redis configuration
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [('127.0.0.1', 6379)],
+            "capacity": 1500,
+            "expiry": 20,
+        },
+    },
+}
+
+# External Inventory Systems Configuration
+EXTERNAL_INVENTORY_SYSTEMS = [
+    'erp', 'wms', 'pos', 'woocommerce', 'shopify', 'magento', 'custom_api'
+]
+
+# ERP Configuration (SAP, Oracle, etc.)
+ERP_CONFIG = {
+    'enabled': True,
+    'base_url': 'https://your-erp.company.com/api',
+    'access_token': 'your_erp_token',
+    'timeout': 15
+}
+
+# WMS Configuration
+WMS_CONFIG = {
+    'enabled': True,
+    'base_url': 'https://wms.company.com/api',
+    'api_key': 'your_wms_api_key'
+}
+
+# POS Configuration
+POS_CONFIG = {
+    'enabled': True,
+    'base_url': 'https://connect.squareup.com',
+    'access_token': 'your_square_token'
+}
+
+# WooCommerce Configuration
+WOOCOMMERCE_CONFIG = {
+    'enabled': True,
+    'base_url': 'https://yourstore.com',
+    'consumer_key': 'ck_your_consumer_key',
+    'consumer_secret': 'cs_your_consumer_secret'
+}
+
+# Shopify Configuration
+SHOPIFY_CONFIG = {
+    'enabled': True,
+    'base_url': 'https://your-store.myshopify.com',
+    'access_token': 'shpat_your_access_token',
+    'product_mapping': {
+        'SKU001': '123456789',
+        'SKU002': '987654321'
+    }
+}
+
+# Custom API Endpoints
+CUSTOM_INVENTORY_APIS = [
+    {
+        'enabled': True,
+        'name': 'Legacy System',
+        'endpoint': 'https://legacy.company.com/api/stock/{sku}',
+        'headers': {'Authorization': 'Bearer legacy_token'},
+        'quantity_path': 'data.inventory.available'
+    }
+]
+
+# Celery Configuration
+CELERY_BROKER_URL = 'redis://localhost:6379/0'  # Redis broker (install Redis: https://redis.io/download)
+CELERY_RESULT_BACKEND = 'django-db'
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Africa/Maputo'  # Match your TIME_ZONE
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'  # For periodic tasks
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutes per task
+CELERY_TASK_SOFT_TIME_LIMIT = 20 * 60  # Soft limit
+
+# Worker settings
+CELERY_WORKER_MAX_TASKS_PER_CHILD = 1000
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+CELERY_WORKER_CONCURRENCY = 4
+
+# Task routing
+CELERY_TASK_ROUTES = {
+    'stock.tasks': {'queue': 'stock'},
+    'stock.tasks.process_bulk_import': {'queue': 'high_priority'},
+    'stock.tasks.generate_*': {'queue': 'reports'},
+    'reports.*': {'queue': 'reports'},
+    'hr.*': {'queue': 'hr'},
+    'notifications.*': {'queue': 'notifications'},
+    'low_priority.*': {'queue': 'low_priority'},
+    'users.tasks': {'queue': 'users'},
+}
+
+CELERY_BEAT_SCHEDULE = {
+    'check-stock-alerts-daily': {
+        'task': 'stock.tasks.check_stock_alerts',
+        'schedule': crontab(minute=0, hour=2),  # Daily at 2 AM
+    },
+    'cleanup-expired-cache': {
+        'task': 'stock.tasks.cleanup_expired_cache',
+        'schedule': crontab(minute=0, hour=4),  # Daily at 4 AM
+    },
+    'update-stock-analytics': {
+        'task': 'stock.tasks.update_stock_analytics',
+        'schedule': crontab(minute=0, hour=1),  # Daily at 1 AM
+    },
+}
+
+# For MTN SMS API (keep existing)
+MTN_SMS = {
+    "CLIENT_ID": "r5hnHDh7aEVfuneuG2Pob2gb1AUxKg7B",
+    "CLIENT_SECRET": "BfaAd4PrnSzdVr66",
+    "BASE_URL": "https://sandbox.momodeveloper.mtn.com",  # or production URL
+}
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = "obedpianoman@gmail.com"
+EMAIL_HOST_PASSWORD = "jicl rpoe hlwo sduu"  # use an app password, not your real password
+DEFAULT_FROM_EMAIL = "High Prosper Services <obedpianoman@gmail.com>"
+
+
+# Django REST Framework
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+    ],
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
+        'rest_framework.filters.OrderingFilter',
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 50,
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',  # Only JSON responses (fixes TemplateDoesNotExist)
+        # Uncomment the next line if you want the browsable API
+        # 'rest_framework.renderers.BrowsableAPIRenderer',
+    ),
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '2000/hour',
+        'user': '10000/hour',
+    },
+}
+
+# MTN MoMo API Credentials
+MOMO_API_USER = "YOUR_MOMO_API_USER"
+MOMO_API_KEY = "YOUR_MOMO_API_KEY"
+MOMO_API_ENV = "sandbox"  # or 'production'
+MOMO_API_BASE_URL = "https://sandbox.momodeveloper.mtn.com/collection/v1_0"
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=7),
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}
+
+
+MTN_API_KEY = os.getenv('MTN_API_KEY')
+MTN_CLIENT_ID = os.getenv('MTN_CLIENT_ID')
+MTN_CLIENT_SECRET = os.getenv('MTN_CLIENT_SECRET')
+MTN_SENDER_ID = os.getenv('MTN_SENDER_ID')
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{asctime} {levelname} {name} {message}',
+            'style': '{',
+        },
+        'query': {
+            'format': '\n\n[SQL QUERY] {asctime} {levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'ERROR',
+            'class': 'logging.FileHandler',
+            'filename': 'debug.log',
+            'formatter': 'verbose',
+        },
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+        'query_console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'query',  # Special format for queries
+        },
+    },
+    'loggers': {
+        'core': {
+            'handlers': ['file'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
+        'collector': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',           # INFO for production, DEBUG for dev
+            'propagate': False,
+        },
+        # Log all Django framework messages
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        # === SLOW QUERY LOGGING ===
+        'django.db.backends': {
+            'handlers': ['query_console'],  # Send to console (or add 'file' if you want in log file)
+            'level': 'DEBUG',               # Capture all queries
+            'propagate': False,
+        },
+    },
+}
+
+
+
+APPEND_SLASH = True
+
+VAPID_PUBLIC_KEY = os.getenv("VAPID_PUBLIC_KEY")
+VAPID_PRIVATE_KEY = os.getenv("VAPID_PRIVATE_KEY")
+VAPID_EMAIL = os.getenv("VAPID_EMAIL")
+
+LOGIN_REDIRECT_URL = '/admin/'
+LOGOUT_REDIRECT_URL = '/admin/login/'
+
+# ERP Integration
+ERP_ENABLED = True
+ERP_API_URL = os.getenv('ERP_API_URL', 'https://api.erp-system.com')
+ERP_API_KEY = os.getenv('ERP_API_KEY')
+ERP_WEBHOOK_URL = os.getenv('ERP_WEBHOOK_URL', 'https://api.erp-system.com/webhooks/inventory')
+
+# WebSocket Configuration
+WEBSOCKET_URL = "ws://127.0.0.1:8000/ws/"
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': 'redis://127.0.0.1:6379/0',
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
+    },
+    'websocket': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': 'redis://127.0.0.1:6379/1',
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
+    }
+}
+
+STOCK_THROTTLE_RATES = {
+    'STOCK_OPERATION_RATE': '60/minute',
+    'BATCH_OPERATION_RATE': '10/minute',
+    'WAREHOUSE_TRANSFER_RATE': '20/minute',
+    'VALUATION_RATE': '5/minute',
+    'BULK_IMPORT_EXPORT_RATE': '3/hour',
+    'SEARCH_FILTER_RATE': '120/minute',
+    'DASHBOARD_RATE': '60/minute',
+    'STOCK_USER_RATE': '200/hour',
+    'STOCK_ANON_RATE': '20/hour',
+    'MAX_BATCH_SIZE': 1000,
+    'MAX_TRANSFER_VALUE': 50000,
+    'MAX_IMPORT_FILE_SIZE_MB': 50
+}
+
+warnings.filterwarnings(
+    "ignore",
+    message="pkg_resources is deprecated as an API"
+)
+
+STRIPE_SECRET_KEY = "sk_live_..."
+STRIPE_PUBLIC_KEY = "pk_live_..."
+STRIPE_WEBHOOK_SECRET = "whsec_..."
+
+# Billing plans
+BILLING_PLANS = {
+    'starter': {
+        'name': 'Starter',
+        'price_monthly': 9900,  # $99
+        'price_yearly': 99000,  # $990
+        'features': ['Up to 50 PRs/month', 'Basic AI', 'Email Support'],
+    },
+    'pro': {
+        'name': 'Pro',
+        'price_monthly': 29900,
+        'price_yearly': 299000,
+        'features': ['Unlimited PRs', 'Full ProsperBot AI', 'Blockchain', 'Priority Support'],
+    },
+    'enterprise': {
+        'name': 'Enterprise',
+        'price_monthly': None,  # Custom
+        'features': ['White-label', 'Dedicated Instance', 'Custom AI Training'],
+    },
+}
+
+# WhatsApp Business API
+WHATSAPP_TOKEN = "EAAG...your_permanent_token"
+WHATSAPP_PHONE_NUMBER_ID = "123456789012345"
+WHATSAPP_VERIFY_TOKEN = "highprosper2025"  # Change this!
+
+MOMO_ENVIRONMENT = 'sandbox'  # or 'production'
+MOMO_DISBURSEMENT_USER = 'your_disbursement_api_user'
+MOMO_DISBURSEMENT_KEY = 'your_disbursement_api_key'
+MOMO_DISBURSEMENT_KEYs = 'your_disbursement_subscription_key'
+

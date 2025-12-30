@@ -1,0 +1,28 @@
+{
+  "title": "{{ title }}",
+  "body": "{{ message }}",
+  "icon": "/static/images/logo-192.png",
+  "badge": "/static/images/badge-64.png",
+  "image": "{{ image|default:'/static/images/default-push.jpg' }}",
+  "vibrate": [300, 100, 300],
+  "actions": [
+    {
+      "action": "view",
+      "title": "View Details",
+      "icon": "/static/images/icon-view.png"
+    },
+    {
+      "action": "dismiss",
+      "title": "Dismiss",
+      "icon": "/static/images/icon-close.png"
+    }
+  ],
+  "data": {
+    "url": "{{ url|default:'/dashboard' }}",
+    "notification_type": "{{ notification_type|default:'info' }}",
+    "id": "{{ notification_id|default:'' }}"
+  },
+  "tag": "high-prosper-{{ notification_type }}",
+  "requireInteraction": true,
+  "renotify": true
+}

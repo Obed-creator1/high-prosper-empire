@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block title %}Maintenance List - High Prosper Services{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h1>Maintenance List</h1>
+    <a href="{% url 'core:add_maintenance' %}" class="btn btn-primary mb-3">Add Maintenance</a>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Asset</th>
+                <th>Description</th>
+                <th>Cost</th>
+                <th>Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for maintenance in maintenances %}
+            <tr>
+                <td>{{ maintenance.asset.name }}</td>
+                <td>{{ maintenance.description }}</td>
+                <td>RWF {{ maintenance.cost }}</td>
+                <td>{{ maintenance.date }}</td>
+                <td>
+                    <a href="{% url 'core:maintenance_edit' maintenance.id %}" class="btn btn-warning btn-sm">Edit</a>
+                    <a href="{% url 'core:maintenance_delete' maintenance.id %}" class="btn btn-danger btn-sm">Delete</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="text-center">No maintenance records yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

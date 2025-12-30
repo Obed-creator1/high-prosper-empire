@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block title %}Purchases List - High Prosper Services{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h1>Purchases List</h1>
+    <a href="{% url 'procurement:add_purchase' %}" class="btn btn-primary mb-3">Add Purchase</a>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Supplier</th>
+                <th>Item</th>
+                <th>Amount</th>
+                <th>Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for purchase in purchases %}
+            <tr>
+                <td>{{ purchase.supplier.name }}</td>
+                <td>{{ purchase.item.name }}</td>
+                <td>RWF {{ purchase.amount }}</td>
+                <td>{{ purchase.date }}</td>
+                <td>
+                    <a href="{% url 'procurement:purchase_edit' purchase.id %}" class="btn btn-warning btn-sm">Edit</a>
+                    <a href="{% url 'procurement:purchase_delete' purchase.id %}" class="btn btn-danger btn-sm">Delete</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="text-center">No purchases yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

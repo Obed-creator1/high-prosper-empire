@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}Receivables List - High Prosper Services{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h1>Receivables List</h1>
+    <a href="{% url 'accounting:add_receivable' %}" class="btn btn-primary mb-3">Add Receivable</a>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Customer</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for receivable in receivables %}
+            <tr>
+                <td>{{ receivable.customer.name }}</td>
+                <td>RWF {{ receivable.amount }}</td>
+                <td>{{ receivable.status }}</td>
+                <td>
+                    <a href="{% url 'accounting:receivable_edit' receivable.id %}" class="btn btn-warning btn-sm">Edit</a>
+                    <a href="{% url 'accounting:mark_receivable_paid' receivable.id %}" class="btn btn-success btn-sm">Mark Paid</a>
+                    <a href="{% url 'accounting:receivable_delete' receivable.id %}" class="btn btn-danger btn-sm">Delete</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-center">No receivables yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

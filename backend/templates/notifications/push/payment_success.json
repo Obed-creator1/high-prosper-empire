@@ -1,0 +1,17 @@
+{
+  "title": "Payment Received! 💰",
+  "body": "{{ amount }} RWF received from {{ customer_name }}.\nThank you!",
+  "icon": "/static/images/logo-192.png",
+  "image": "/static/images/payment-success.jpg",
+  "vibrate": [200, 100, 200, 100, 200],
+  "actions": [
+    {
+      "action": "view_invoice",
+      "title": "View Invoice"
+    }
+  ],
+  "data": {
+    "url": "/payments/invoice/{{ invoice_id }}",
+    "notification_type": "payment"
+  }
+}

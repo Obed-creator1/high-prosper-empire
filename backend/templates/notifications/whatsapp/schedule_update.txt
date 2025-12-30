@@ -1,0 +1,9 @@
+*Collection Schedule Update*
+Village: {{ village.name }}
+Day: {{ day_of_week }}
+Week: {{ week_number }}, {{ year }}
+
+{{ message }}
+
+High Prosper Services Ltd
++250 785 340 438

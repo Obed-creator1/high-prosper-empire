@@ -1,0 +1,17 @@
+{
+  "title": "New Task Assigned 🚀",
+  "body": "{{ task_title }}\nDue: {{ due_date|date:'d M Y' }}\nPriority: {{ priority|title }}",
+  "icon": "/static/images/logo-192.png",
+  "image": "/static/images/new-task.jpg",
+  "vibrate": [100, 50, 100],
+  "actions": [
+    {
+      "action": "open_task",
+      "title": "Open Task"
+    }
+  ],
+  "data": {
+    "url": "/collector/tasks/{{ task_id }}",
+    "notification_type": "task"
+  }
+}
