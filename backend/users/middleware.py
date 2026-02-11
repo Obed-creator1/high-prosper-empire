@@ -6,9 +6,13 @@ from urllib.parse import parse_qs
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from channels.db import database_sync_to_async
+from django.utils import timezone
 from rest_framework_simplejwt.tokens import UntypedToken
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 
 @database_sync_to_async
@@ -71,3 +75,36 @@ class RoleRequiredMiddleware:
                 return redirect(reverse("login"))
 
         return self.get_response(request)
+
+class UpdateLastSeenMiddleware:
+    """
+    Middleware to update user's last_seen timestamp on every authenticated request.
+    Also sets is_online=True while active.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.get_response(request)
+
+        # Only update for authenticated users
+        if request.user.is_authenticated:
+            # Optional: Skip for certain paths (e.g. static files, health checks)
+            if request.path.startswith('/static/') or request.path.startswith('/admin/') or request.path == '/health/':
+                return response
+
+            # Update last_seen and is_online
+            now = timezone.now()
+
+            # Use update() to avoid full model save (faster, no signals triggered)
+            User.objects.filter(pk=request.user.pk).update(
+                last_seen=now,
+                is_online=True
+            )
+
+            # Optional: Refresh request.user object if needed later in the request
+            request.user.last_seen = now
+            request.user.is_online = True
+
+        return response

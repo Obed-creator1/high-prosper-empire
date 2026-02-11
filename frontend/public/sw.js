@@ -55,6 +55,22 @@ self.addEventListener("install", (event) => {
     );
 });
 
+self.addEventListener('notificationclick', event => {
+    const action = event.action;
+    const notification = event.notification;
+
+    if (action === 'unsubscribe') {
+        const unsubscribeUrl = notification.data.unsubscribe_endpoint;
+        if (unsubscribeUrl) {
+            clients.openWindow(unsubscribeUrl);
+        }
+    } else {
+        clients.openWindow(notification.data.url || '/');
+    }
+
+    notification.close();
+});
+
 // ACTIVATE — Immediate control + clean old caches
 self.addEventListener("activate", (event) => {
     console.log("🟢 High Prosper Empire SW v6.0: Activated");

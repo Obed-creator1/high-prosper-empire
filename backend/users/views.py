@@ -1,15 +1,20 @@
 import json
 import secrets
+import traceback
 from decimal import Decimal
 
 from asgiref.sync import async_to_sync
 from django.contrib.auth.hashers import make_password
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.messages import get_messages
+from django.core.exceptions import PermissionDenied
+from django.db.models.functions import TruncMonth, TruncDay, ExtractHour, ExtractIsoWeekDay
 from django.db import models
-from django.db.models import Q, Sum, Count, Value, CharField, Func, F
+from django.db.models import Q, Sum, Count, Value, CharField, Func, F, OuterRef, Exists
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from rest_framework import status, viewsets, views, permissions, generics
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
@@ -17,17 +22,10 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from rest_framework.views import APIView
 from channels.layers import get_channel_layer
-from .models import CustomUser, ChatMessage, OTP, MessageReaction, ChatRoom, RoomMember, SearchAnalytics
-from .otp_utls import generate_otp
-from .serializers import UserSerializer, LoginSerializer, ChatMessageSerializer, UserUpdateSerializer, \
-    SidebarUserSerializer, ChatRoomSerializer
-
 import io
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+
 from reportlab.lib.pagesizes import A4
-from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 import csv
 from django.utils import timezone
 from django.core.mail import send_mail, EmailMessage
@@ -36,25 +34,800 @@ from datetime import timedelta, datetime
 from django.conf import settings
 from payments.models import Payment, PaymentMethod
 from pywebpush import webpush, WebPushException
-from .models import Sticker
-from .serializers import StickerSerializer
+from .models import Sticker, BlockedUser
+from .permissions import IsOwnerOrAdmin
 from django.core.files.storage import default_storage
 from hr.services import MTNSMSService, EmailService
 from .utils import require_group_admin
 from customers.models import Customer
 from django.core.cache import cache
-from collector.models import Collector, CollectorTarget
+from collector.models import Collector
 from notifications.models import Notification
 from fleet.models import Vehicle
 from hr.models import Staff
 from payments.models import Invoice
 from procurement.models import Item, Supplier
 from django.db.models.functions import Lower, Concat
+from django_filters.rest_framework import DjangoFilterBackend
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter, OrderingFilter
+from rest_framework.pagination import PageNumberPagination
+from reportlab.lib.pagesizes import landscape, letter
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image as ReportLabImage, \
+    PageBreak, PageTemplate, Frame
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib import colors
+from reportlab.lib.units import inch
+from reportlab.pdfgen import canvas
+from reportlab.graphics.shapes import Drawing
+from reportlab.graphics.charts.piecharts import Pie
+from reportlab.graphics.charts.barcharts import VerticalBarChart
+from reportlab.graphics.charts.linecharts import HorizontalLineChart
+from openpyxl import Workbook
+from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+from openpyxl.utils import get_column_letter
+from openpyxl.formatting.rule import CellIsRule, FormulaRule
+from openpyxl.chart import PieChart, BarChart, LineChart, Reference
+from openpyxl.chart.label import DataLabelList
+import os
+
+from .models import (
+    CustomUser, UserProfile, ChatMessage, Sticker, MessageReaction,
+    ChatRoom, RoomMember, Post, Comment, Reaction, Share, Friendship, Activity, OTP, SearchAnalytics
+)
+from .serializers import (
+    UserSerializer, LoginSerializer, UserUpdateSerializer,
+    SidebarUserSerializer, ChatRoomSerializer, UserListSerializer,
+    ChatMessageSerializer, StickerSerializer,
+    PostSerializer, CommentSerializer, ReactionSerializer,
+    ShareSerializer, FriendshipSerializer, ActivitySerializer, BlockedUserListSerializer,
+    BlockedUserSerializer, BlockedUserCreateSerializer, ActivityMinimalSerializer
+)
 
 User = get_user_model()
 
 # Temporary OTP store (in-memory). For production use Redis or database table.
 OTP_STORE = {}
+
+# ─── Configuration ──────────────────────────────────────────────────────────
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+STATIC_DIR = os.path.join(BASE_DIR, 'static')
+LOGO_PATH = os.path.join(STATIC_DIR, 'logo.png')  # Update to your real logo path
+
+SOCIAL_ICONS = {
+    "Twitter/X": {
+        "icon": os.path.join(STATIC_DIR, 'social', 'twitter.png'),
+        "url": "https://twitter.com/highprosper_rw"
+    },
+    "Facebook": {
+        "icon": os.path.join(STATIC_DIR, 'social', 'facebook.png'),
+        "url": "https://facebook.com/highprosper"
+    },
+    "LinkedIn": {
+        "icon": os.path.join(STATIC_DIR, 'social', 'linkedin.png'),
+        "url": "https://linkedin.com/company/highprosper"
+    },
+    "Instagram": {
+        "icon": os.path.join(STATIC_DIR, 'social', 'instagram.png'),
+        "url": "https://instagram.com/highprosper_rw"
+    },
+    "WhatsApp": {
+        "icon": os.path.join(STATIC_DIR, 'social', 'whatsapp.png'),
+        "url": "https://wa.me/250788123456"
+    },
+    "Telegram": {
+        "icon": os.path.join(STATIC_DIR, 'social', 'telegram.png'),
+        "url": "https://t.me/highprosper_rw"
+    }
+}
+
+COMPANY_NAME = "High Prosper Services Ltd"
+COMPANY_LOCATION = "Kigali, Rwanda"
+COMPANY_PHONE = "+250 788 123 456"
+COMPANY_EMAIL = "info@highprosper.com"
+
+# Custom Pagination
+class StandardResultsSetPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+class ActivityPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+
+# ──────────────────────────────────────────────────────────────
+# PERMISSIONS
+# ──────────────────────────────────────────────────────────────
+
+class IsAdminOrCEO(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.role in ['admin', 'ceo']
+
+class IsOwnerOrReadOnly(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return obj.user == request.user
+
+class IsPostOwnerOrAdmin(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return obj.user == request.user or request.user.role in ['admin', 'ceo']
+
+class CheckUniqueAPIView(APIView):
+    """
+    POST /api/v1/users/check-unique/
+
+    Body:
+    {
+        "field": "username" | "email" | "phone",
+        "value": "the_value_to_check"
+    }
+
+    Returns:
+    200 { "available": true/false }
+    400 { "detail": "Invalid field" }
+    """
+    permission_classes = []  # public endpoint
+
+    def post(self, request):
+        field = request.data.get("field")
+        value = request.data.get("value")
+
+        valid_fields = ["username", "email", "phone"]
+        if field not in valid_fields:
+            return Response(
+                {"detail": f"Invalid field. Must be one of: {', '.join(valid_fields)}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not value:
+            return Response(
+                {"detail": "Value is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Build query (case-insensitive for username/email, exact for phone)
+        query = Q()
+        if field == "username":
+            query = Q(username__iexact=value)
+        elif field == "email":
+            query = Q(email__iexact=value)
+        elif field == "phone":
+            query = Q(phone__exact=value)  # phone usually exact match
+
+        exists = User.objects.filter(query).exists()
+
+        return Response({"available": not exists})
+
+# ---------------------------------------------------------------------------
+# 👥 User Management (Admin)
+# ---------------------------------------------------------------------------
+
+class UserViewSet(viewsets.ModelViewSet):
+    """
+    Full User Management API
+    - Admins/CEOs: full CRUD on all users
+    - Authenticated users: read/update own profile only (via /me/)
+    - POST /api/v1/users/ → create new user (admin only)
+    """
+    queryset = CustomUser.objects.all().order_by('first_name', 'last_name')
+    serializer_class = UserSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['role', 'is_active', 'company', 'branch']
+    search_fields = ['username', 'first_name', 'last_name', 'email', 'phone']
+    ordering_fields = ['date_joined', 'last_login', 'role', 'first_name']
+
+    def get_permissions(self):
+        """
+        Custom permissions per action:
+        - list/retrieve: authenticated users (but filtered to own data if not admin)
+        - create/update/delete: admin or CEO only
+        - me: authenticated user only
+        """
+        if self.action in ['me', 'retrieve', 'update', 'partial_update']:
+            return [IsAuthenticated()]
+        if self.action in ['create', 'destroy', 'list', 'collectors']:
+            return [IsAdminOrCEO()]
+        return super().get_permissions()
+
+    def get_serializer_class(self):
+        if self.action in ['list', 'collectors', 'me']:
+            return UserListSerializer
+        return UserSerializer
+
+    def get_queryset(self):
+        """
+        Filter queryset based on user role
+        - Admins/CEOs see everything
+        - Regular users only see their own profile
+        """
+        qs = super().get_queryset()
+        user = self.request.user
+
+        if user.is_superuser or user.is_ceo:  # assuming is_ceo is a property/method
+            return qs
+
+        if self.action in ['retrieve', 'update', 'partial_update', 'me']:
+            return qs.filter(id=user.id)
+
+        # For list/collectors: non-admins get empty queryset
+        return qs.none()
+
+    def perform_create(self, serializer):
+        """
+        Handle password hashing on create + set created_by
+        """
+        if 'password' in serializer.validated_data:
+            serializer.validated_data['password'] = make_password(
+                serializer.validated_data['password']
+            )
+        serializer.save(created_by=self.request.user)
+
+    def perform_update(self, serializer):
+        """
+        Handle password update only if provided
+        """
+        if 'password' in serializer.validated_data:
+            serializer.validated_data['password'] = make_password(
+                serializer.validated_data['password']
+            )
+        serializer.save()
+
+    @action(detail=False, methods=['get'], url_path='me', permission_classes=[IsAuthenticated])
+    def me(self, request):
+        """Return current user's full profile"""
+        serializer = self.get_serializer(request.user)
+        return Response(serializer.data)
+
+    def list(self, request, *args, **kwargs):
+        """Always return paginated format with count"""
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({
+            "count": queryset.count(),
+            "results": serializer.data
+        })
+
+    @action(detail=False, methods=['get'], url_path='collectors', permission_classes=[IsAuthenticated])
+    def collectors(self, request):
+        """
+        Dedicated endpoint: /api/v1/users/collectors/
+        Returns only active collectors — perfect for village assignment dropdown
+        """
+        collectors_qs = CustomUser.objects.filter(
+            role='collector',
+            is_active=True
+        ).order_by('first_name', 'last_name')
+
+        page = self.paginate_queryset(collectors_qs)
+        if page is not None:
+            serializer = UserListSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = UserListSerializer(collectors_qs, many=True)
+        return Response({
+            "count": collectors_qs.count(),
+            "results": serializer.data
+        })
+
+class UpdateProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request):
+        user = request.user
+        serializer = UserUpdateSerializer(user, data=request.data, partial=True, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                "message": "Profile updated successfully",
+                "user": UserSerializer(user, context={'request': request}).data
+            }, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        new_password = request.data.get("new_password")
+
+        if not new_password:
+            return Response({"error": "New password required"}, status=400)
+
+        user.set_password(new_password)
+        user.must_change_password = False
+        user.save()
+        return Response({"success": "Password updated successfully"})
+
+
+# ──────────────────────────────────────────────────────────────
+# SOCIAL FEATURES VIEWSETS
+# ──────────────────────────────────────────────────────────────
+
+class PostViewSet(viewsets.ModelViewSet):
+    """
+    Posts API - Create, list, detail, update, delete
+    """
+    queryset = Post.objects.all().order_by('-created_at')
+    serializer_class = PostSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_fields = ['privacy', 'is_announcement', 'user']
+    search_fields = ['content']
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            return [IsAuthenticated()]
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [IsAuthenticated(), IsPostOwnerOrAdmin()]
+        return [IsAuthenticated()]
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    @action(detail=True, methods=['post'], url_path='like')
+    def like(self, request, pk=None):
+        """
+        Toggle like on a post.
+        Expects: {"action": "like" | "unlike"}
+        Returns updated likes_count and user_has_liked
+        """
+        post = self.get_object()
+
+        # Get or create content type for Post
+        content_type = ContentType.objects.get_for_model(Post)
+
+        # Check if user already liked
+        existing = Reaction.objects.filter(
+            user=request.user,
+            content_type=content_type,
+            object_id=post.id,
+            reaction_type='like'  # or your like emoji/reaction type
+        ).first()
+
+        if request.data.get('action') == 'unlike':
+            if existing:
+                existing.delete()
+        else:  # like
+            if not existing:
+                Reaction.objects.create(
+                    user=request.user,
+                    content_type=content_type,
+                    object_id=post.id,
+                    reaction_type='like'
+                )
+
+        # Recalculate total likes
+        likes_count = Reaction.objects.filter(
+            content_type=content_type,
+            object_id=post.id,
+            reaction_type='like'
+        ).count()
+
+        user_has_liked = Reaction.objects.filter(
+            user=request.user,
+            content_type=content_type,
+            object_id=post.id,
+            reaction_type='like'
+        ).exists()
+
+        return Response({
+            'likes_count': likes_count,
+            'user_has_liked': user_has_liked
+        })
+
+    @action(detail=True, methods=['post'], url_path='comments')
+    def comments(self, request, pk=None):
+        """
+        POST /api/v1/users/posts/<post_id>/comments/
+        Create a new comment on this post.
+        Expected payload: { "content": "Your comment here" }
+        """
+        post = self.get_object()
+
+        # Pass post & request to serializer context
+        serializer = CommentSerializer(
+            data=request.data,
+            context={'request': request, 'post': post}  # ← pass context!
+        )
+
+        serializer.is_valid(raise_exception=True)
+
+        # Auto-assign user & post
+        comment = serializer.save()  # create() will use context
+
+        # Return full serialized comment (with user info)
+        return Response(CommentSerializer(comment).data, status=status.HTTP_201_CREATED)
+
+
+class CommentViewSet(viewsets.ModelViewSet):
+    """
+    Comment ViewSet - Handles CRUD for comments with proper nesting under posts.
+    """
+    queryset = Comment.objects.all().order_by('-created_at')  # Newest first
+    serializer_class = CommentSerializer
+    pagination_class = StandardResultsSetPagination
+
+    # Permissions: authenticated for create, owner-only for update/delete
+    def get_permissions(self):
+        if self.action in ['create', 'list', 'retrieve']:
+            return [IsAuthenticated()]
+        return [IsAuthenticated(), IsOwnerOrReadOnly()]
+
+    # ─── Nested under Post ────────────────────────────────────────────────────
+    # This allows /api/v1/posts/<post_pk>/comments/
+    def get_queryset(self):
+        """
+        Filter comments by post if we're in a nested route
+        """
+        queryset = super().get_queryset()
+
+        # If accessed via /posts/<id>/comments/
+        post_pk = self.kwargs.get('post_pk')
+        if post_pk is not None:
+            queryset = queryset.filter(post_id=post_pk)
+
+        return queryset
+
+    def perform_create(self, serializer):
+        """
+        Auto-assign user and post when creating a comment
+        """
+        post_pk = self.kwargs.get('post_pk')
+        if post_pk is None:
+            raise PermissionDenied("Comments must be created under a specific post.")
+
+        try:
+            post = Post.objects.get(id=post_pk)
+        except Post.DoesNotExist:
+            raise PermissionDenied("Post does not exist.")
+
+        # Save with user and post
+        serializer.save(
+            user=self.request.user,
+            post=post
+        )
+
+    # Optional: Custom create response (more detailed)
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    # Extra action: Get comments count for a post (if needed)
+    @action(detail=False, methods=['get'], url_path='count/(?P<post_id>[^/.]+)')
+    def count(self, request, post_id=None):
+        try:
+            count = Comment.objects.filter(post_id=post_id).count()
+            return Response({'comments_count': count})
+        except:
+            return Response({'error': 'Invalid post ID'}, status=400)
+
+
+class ReactionViewSet(viewsets.ModelViewSet):
+    queryset = Reaction.objects.all()
+    serializer_class = ReactionSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+class ShareViewSet(viewsets.ModelViewSet):
+    queryset = Share.objects.all().order_by('-shared_at')
+    serializer_class = ShareSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(sharer=self.request.user)
+
+
+class FriendshipViewSet(viewsets.ModelViewSet):
+    """
+    Friendship ViewSet - Handles friend requests & friendships
+    """
+    queryset = Friendship.objects.all()
+    serializer_class = FriendshipSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        """
+        Users can only see their own friendships/requests
+        Admins/CEOs see everything
+        """
+        user = self.request.user
+        if user.is_superuser or user.role in ['admin', 'ceo']:
+            return Friendship.objects.all()
+
+        return Friendship.objects.filter(
+            Q(from_user=user) | Q(to_user=user)
+        )
+
+    def perform_create(self, serializer):
+        """
+        When creating → it's always a new friend request
+        Auto-set from_user = current user
+        """
+        serializer.save(from_user=self.request.user)
+
+    @action(detail=True, methods=['post'], url_path='accept')
+    def accept(self, request, pk=None):
+        """Accept a friend request (only recipient can do this)"""
+        friendship = self.get_object()
+
+        if friendship.to_user != request.user:
+            return Response(
+                {"detail": "You can only accept requests sent to you."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        if friendship.status != 'pending':
+            return Response(
+                {"detail": "This request is not pending."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        friendship.status = 'accepted'
+        friendship.save()
+
+        return Response(FriendshipSerializer(friendship).data)
+
+    @action(detail=True, methods=['post'], url_path='reject')
+    def reject(self, request, pk=None):
+        """Reject a friend request (only recipient)"""
+        friendship = self.get_object()
+
+        if friendship.to_user != request.user:
+            return Response(
+                {"detail": "You can only reject requests sent to you."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        if friendship.status != 'pending':
+            return Response(
+                {"detail": "This request is not pending."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        friendship.status = 'rejected'
+        friendship.save()
+
+        return Response(FriendshipSerializer(friendship).data)
+
+    @action(detail=True, methods=['post'], url_path='cancel')
+    def cancel(self, request, pk=None):
+        """Cancel a pending friend request (only sender)"""
+        friendship = self.get_object()
+
+        if friendship.from_user != request.user:
+            return Response(
+                {"detail": "You can only cancel requests you sent."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        if friendship.status != 'pending':
+            return Response(
+                {"detail": "This request is not pending."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        friendship.status = 'cancelled'
+        friendship.save()
+
+        return Response(FriendshipSerializer(friendship).data)
+
+    # List pending received requests
+    @action(detail=False, methods=['get'], url_path='pending-received')
+    def pending_received(self, request):
+        friendships = Friendship.objects.filter(
+            to_user=request.user,
+            status='pending'
+        )
+        serializer = FriendshipSerializer(friendships, many=True)
+        return Response(serializer.data)
+
+    # List pending sent requests
+    @action(detail=False, methods=['get'], url_path='pending-sent')
+    def pending_sent(self, request):
+        friendships = Friendship.objects.filter(
+            from_user=request.user,
+            status='pending'
+        )
+        serializer = FriendshipSerializer(friendships, many=True)
+        return Response(serializer.data)
+
+    # List accepted friends
+    @action(detail=False, methods=['get'], url_path='friends')
+    def friends(self, request):
+        friendships = Friendship.objects.filter(
+            Q(from_user=request.user) | Q(to_user=request.user),
+            status='accepted'
+        )
+        friends = []
+        for f in friendships:
+            if f.from_user == request.user:
+                friends.append(f.to_user)
+            else:
+                friends.append(f.from_user)
+
+        serializer = UserListSerializer(friends, many=True)
+        return Response(serializer.data)
+
+
+class ActivityViewSet(viewsets.ModelViewSet):
+    """
+    Activity ViewSet - complete CRUD + custom actions
+
+    Permissions:
+    - Admins / staff → full access
+    - Authenticated users → read-only access to their own activities
+    - Anonymous → no access
+    """
+    queryset = Activity.objects.all()
+    serializer_class = ActivitySerializer
+    permission_classes = [permissions.IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = {
+        'action_type': ['exact', 'in'],
+        'user__id': ['exact'],
+        'created_at': ['gte', 'lte', 'date__gte', 'date__lte'],
+    }
+    search_fields = ['action_type', 'user__username', 'extra_data']
+    ordering_fields = ['created_at', 'action_type']
+    ordering = ['-created_at']
+
+    def get_queryset(self):
+        """
+        Admins see everything
+        Regular users see only their own activities
+        """
+        qs = super().get_queryset().select_related('user')
+
+        if not self.request.user.is_staff and not self.request.user.is_superuser:
+            qs = qs.filter(user=self.request.user)
+
+        return qs
+
+    def get_serializer_class(self):
+        """
+        Use minimal serializer for list views to reduce payload size
+        """
+        if self.action in ['list', 'my_activities', 'recent']:
+            return ActivityMinimalSerializer
+        return ActivitySerializer
+
+    # ─── Custom Actions ─────────────────────────────────────────────────────
+
+    @action(detail=False, methods=['get'], url_path='my')
+    def my_activities(self, request):
+        """Shortcut for current user's activities"""
+        queryset = self.filter_queryset(
+            self.get_queryset().filter(user=request.user)
+        )
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], url_path='recent')
+    def recent(self, request):
+        """Last 50 activities (for dashboard / notification center)"""
+        queryset = self.filter_queryset(
+            self.get_queryset()
+        )[:50]
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], url_path='today')
+    def today(self, request):
+        """Activities from today only"""
+        today_start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        queryset = self.filter_queryset(
+            self.get_queryset().filter(created_at__gte=today_start)
+        )
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    # ─── Create / Update / Delete restrictions ─────────────────────────────
+
+    def create(self, request, *args, **kwargs):
+        """Activities should usually be created via signals, not direct POST"""
+        return Response(
+            {"detail": "Activities are created automatically via system events."},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED
+        )
+
+    def update(self, request, *args, **kwargs):
+        """Activities are read-only after creation"""
+        return Response(
+            {"detail": "Activities cannot be updated."},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED
+        )
+
+    def destroy(self, request, *args, **kwargs):
+        """Only admins can delete activities (cleanup)"""
+        if not request.user.is_staff:
+            return Response(
+                {"detail": "Only staff can delete activities."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        return super().destroy(request, *args, **kwargs)
+
+    @action(detail=True, methods=['patch'], url_path='read')
+    def mark_read(self, request, pk=None):
+        activity = self.get_object()
+        if activity.user != request.user:
+            return Response(status=403)
+        # Assuming you add is_read field to Activity model
+        activity.is_read = True
+        activity.save(update_fields=['is_read'])
+        return Response({'status': 'read'})
+
+    @action(detail=False, methods=['post'], url_path='mark-all-read')
+    def mark_all_read(self, request):
+        Activity.objects.filter(user=request.user, is_read=False).update(is_read=True)
+        return Response({'status': 'all marked as read'})
+
+class BlockListCreateAPIView(generics.ListCreateAPIView):
+    """
+    GET: List all blocks created by the current user
+    POST: Create a new block
+    """
+    serializer_class = BlockedUserCreateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return BlockedUserListSerializer
+        return BlockedUserCreateSerializer
+
+    def get_queryset(self):
+        return BlockedUser.objects.filter(blocker=self.request.user).order_by('-created_at')
+
+    def perform_create(self, serializer):
+        serializer.save(blocker=self.request.user)
+
+
+class BlockDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    GET: Retrieve a specific block
+    PATCH: Update reason or expires_at (owner or admin)
+    DELETE: Unblock / delete (owner or admin)
+    """
+    serializer_class = BlockedUserSerializer
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrAdmin]
+    lookup_field = 'id'
+    lookup_url_kwarg = 'block_id'
+
+    def get_queryset(self):
+        return BlockedUser.objects.all()
+
+    def perform_destroy(self, instance):
+        # Soft unblock instead of hard delete
+        instance.is_active = False
+        instance.save(update_fields=['is_active'])
+        # Optional: broadcast via signal
 
 
 class GlobalSearchView(APIView):
@@ -731,20 +1504,6 @@ class IsAdminOrReadOnly(permissions.BasePermission):
             return request.user and request.user.is_authenticated
         return request.user and request.user.is_authenticated and request.user.role in ("admin", "ceo")
 
-
-# ---------------------------------------------------------------------------
-# 👥 User Management (Admin)
-# ---------------------------------------------------------------------------
-class UserViewSet(viewsets.ModelViewSet):
-    """
-    Full CRUD for users — restricted to admin/ceo.
-    Used by frontend: /api/users/
-    """
-    queryset = CustomUser.objects.all().order_by("id")
-    serializer_class = UserSerializer
-    permission_classes = [IsAdminOrReadOnly]
-
-
 # ---------------------------------------------------------------------------
 # 📊 Admin Dashboard Stats
 # ---------------------------------------------------------------------------
@@ -857,6 +1616,11 @@ class AdminUserViewSet(viewsets.ModelViewSet):
     queryset = CustomUser.objects.all().order_by("id")
     serializer_class = UserSerializer
     permission_classes = [IsAdminOrCEO]
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)  # ← return plain list, no pagination
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -1122,36 +1886,6 @@ def chat_users(request):
         "id", "username", "profile_picture", "last_seen"
     )
     return Response(list(users))
-
-class UpdateProfileView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def put(self, request):
-        user = request.user
-        serializer = UserUpdateSerializer(user, data=request.data, partial=True)
-
-        if serializer.is_valid():
-            serializer.save()
-            return Response({
-                "message": "Profile updated successfully",
-                "user": serializer.data
-            }, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-class ChangePasswordView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def post(self, request):
-        user = request.user
-        new_password = request.data.get("new_password")
-
-        if not new_password:
-            return Response({"error": "New password required"}, status=400)
-
-        user.set_password(new_password)
-        user.must_change_password = False
-        user.save()
-        return Response({"success": "Password updated successfully"})
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
@@ -2287,3 +3021,798 @@ def send_report_email(request):
     email.send()
 
     return Response({"message": "Report email sent successfully"})
+
+class UserAnalyticsAPIView(APIView):
+    """
+    GET /api/v1/users/admin/analytics/
+    Comprehensive analytics for advanced admin dashboard charts
+    """
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        now = timezone.now()
+        online_threshold = now - timedelta(minutes=5)      # considered online
+        inactive_threshold = now - timedelta(days=30)      # inactive if no activity
+        today = now.date()
+        this_month_start = today.replace(day=1)
+        month_ago = now - timedelta(days=30)
+        year_ago = now - timedelta(days=365)
+
+        # Base queryset
+        all_users = CustomUser.objects.all()
+
+        # ─── Basic Counts ───────────────────────────────────────────────────────
+        total_users = all_users.count()
+        users_by_role = dict(
+            all_users.values('role').annotate(count=Count('id')).values_list('role', 'count')
+        )
+
+        total_online = all_users.filter(
+            is_active=True,
+            last_seen__gte=online_threshold
+        ).count()
+        total_offline = total_users - total_online
+
+        new_today = all_users.filter(date_joined__date=today).count()
+        new_month = all_users.filter(date_joined__gte=this_month_start).count()
+
+        blocked_users = all_users.filter(
+            Exists(BlockedUser.objects.filter(blocked=OuterRef('pk')))
+        ).count()
+
+        inactive_users = all_users.filter(
+            is_active=True,
+            last_seen__lt=inactive_threshold
+        ).count()
+
+        deleted_users = all_users.filter(is_deleted=True).count()
+
+        # ─── Status Breakdown (Donut Chart) ─────────────────────────────────────
+        status_breakdown = {
+            'active': all_users.filter(is_active=True).count(),
+            'inactive': all_users.filter(is_active=False).count(),
+            'verified': all_users.filter(is_verified=True).count(),
+            'unverified': all_users.filter(is_verified=False).count(),
+            'online': total_online,
+            'offline': total_offline,
+        }
+
+        # ─── Monthly User Growth (Line Chart) ───────────────────────────────────
+        monthly_growth_raw = (
+            all_users
+            .annotate(month=TruncMonth('date_joined'))
+            .values('month')
+            .annotate(registrations=Count('id'))
+            .order_by('month')
+        )
+
+        monthly_growth = [
+            {
+                'month': entry['month'].strftime('%Y-%m'),
+                'registrations': entry['registrations']
+            }
+            for entry in monthly_growth_raw
+        ]
+
+        # ─── Role Trend Over Time (Stacked Area Chart) ──────────────────────────
+        role_trend_raw = (
+            all_users
+            .annotate(month=TruncMonth('date_joined'))
+            .values('month', 'role')
+            .annotate(count=Count('id'))
+            .order_by('month', 'role')
+        )
+
+        role_trend = {}
+        for entry in role_trend_raw:
+            month_str = entry['month'].strftime('%Y-%m')
+            role = entry['role'] or 'Unknown'
+            if month_str not in role_trend:
+                role_trend[month_str] = {}
+            role_trend[month_str][role] = entry['count']
+
+        role_trend_formatted = sorted(
+            [{'month': month, **counts} for month, counts in role_trend.items()],
+            key=lambda x: x['month']
+        )
+
+        # Previous period (last 12 months for comparison)
+        previous_role_trend_raw = (
+            all_users
+            .filter(date_joined__lte=year_ago)
+            .annotate(month=TruncMonth('date_joined'))
+            .values('month', 'role')
+            .annotate(count=Count('id'))
+            .order_by('month', 'role')
+        )
+
+        previous_role_trend = {}
+        for entry in previous_role_trend_raw:
+            month_str = entry['month'].strftime('%Y-%m')
+            role = entry['role'] or 'Unknown'
+            if month_str not in previous_role_trend:
+                previous_role_trend[month_str] = {}
+            previous_role_trend[month_str][role] = entry['count']
+
+        previous_role_trend_formatted = sorted(
+            [{'month': month, **counts} for month, counts in previous_role_trend.items()],
+            key=lambda x: x['month']
+        )
+
+        # ─── Activity Heatmap (Day/Hour Matrix - last 30 days) ──────────────────
+        activity_heatmap_raw = (
+            all_users
+            .filter(last_seen__gte=month_ago)
+            .annotate(
+                day=ExtractIsoWeekDay('last_seen'), # ← Correct name
+                hour=ExtractHour('last_seen')
+            )
+            .values('day', 'hour')
+            .annotate(count=Count('id'))
+            .order_by('day', 'hour')
+        )
+
+        activity_heatmap = [
+            {'day': entry['day'], 'hour': entry['hour'], 'value': entry['count']}
+            for entry in activity_heatmap_raw
+        ]
+
+        # ─── Logged-in Stats (from Activity model) ──────────────────────────────
+        logged_in_total = Activity.objects.filter(action_type='login').count()
+        logged_in_month = Activity.objects.filter(
+            action_type='login',
+            created_at__gte=this_month_start
+        ).count()
+
+        # ─── Usage Hours & Performance ──────────────────────────────────────────
+        # Placeholder: 30 min average session per login
+        usage_hours = round(logged_in_month * 0.5, 1)
+
+        active_7d = all_users.filter(last_seen__gte=now - timedelta(days=7)).count()
+        performance_percentage = round((active_7d / total_users * 100), 1) if total_users > 0 else 0
+
+        # ─── Final Response Data ────────────────────────────────────────────────
+        data = {
+            "total_users": total_users,
+            "users_by_role": users_by_role,
+            "total_online": total_online,
+            "total_offline": total_offline,
+            "new_users_today": new_today,
+            "new_users_month": new_month,
+            "blocked_users": blocked_users,
+            "inactive_users": inactive_users,
+            "deleted_users": deleted_users,
+            "logged_in_total": logged_in_total,
+            "logged_in_month": logged_in_month,
+            "usage_hours": usage_hours,
+            "performance_percentage": performance_percentage,
+
+            # Chart-specific data
+            "monthly_growth": monthly_growth,               # Line chart
+            "role_trend": role_trend_formatted,             # Stacked area chart
+            "role_trend_previous": previous_role_trend_formatted,  # Comparison
+            "activity_heatmap": activity_heatmap,           # Heatmap + zoom
+            "status_breakdown": status_breakdown,           # Donut chart
+        }
+
+        return Response(data)
+
+class ExportUsersPDFAPIView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        print("PDF Export requested by:", request.user, "Is staff:", request.user.is_staff)
+
+        try:
+            # Filters
+            queryset = CustomUser.objects.all()
+            role = request.query_params.get('role')
+            if role:
+                queryset = queryset.filter(role=role)
+            search = request.query_params.get('search')
+            if search:
+                queryset = queryset.filter(
+                    Q(username__icontains=search) |
+                    Q(email__icontains=search) |
+                    Q(first_name__icontains=search) |
+                    Q(last_name__icontains=search)
+                )
+            is_active_str = request.query_params.get('is_active')
+            if is_active_str is not None:
+                is_active_bool = is_active_str.lower() in ('true', '1', 'yes')
+                queryset = queryset.filter(is_active=is_active_bool)
+            date_from = request.query_params.get('date_from')
+            if date_from:
+                try:
+                    dt_from = datetime.strptime(date_from, '%Y-%m-%d').date()
+                    queryset = queryset.filter(date_joined__date__gte=dt_from)
+                except ValueError:
+                    pass
+            date_to = request.query_params.get('date_to')
+            if date_to:
+                try:
+                    dt_to = datetime.strptime(date_to, '%Y-%m-%d').date()
+                    queryset = queryset.filter(date_joined__date__lte=dt_to)
+                except ValueError:
+                    pass
+
+            users = queryset.order_by('-date_joined')
+
+            # Summary stats
+            total_users = users.count()
+            users_by_role = dict(
+                users.values('role').annotate(count=Count('id')).values_list('role', 'count')
+            )
+            total_online = users.filter(is_online=True).count()
+            total_offline = total_users - total_online
+            now = timezone.now()
+            today = now.date()
+            month_start = today.replace(day=1)
+            new_today = users.filter(date_joined__date=today).count()
+            new_month = users.filter(date_joined__gte=month_start).count()
+            inactive_users = users.filter(is_active=True, last_seen__lt=now - timedelta(days=30)).count()
+
+            # PDF response
+            response = HttpResponse(content_type='application/pdf')
+            response['Content-Disposition'] = 'attachment; filename="high_prosper_users_report.pdf"'
+
+            doc = SimpleDocTemplate(
+                response,
+                pagesize=landscape(letter),
+                rightMargin=0.4*inch,
+                leftMargin=0.4*inch,
+                topMargin=1.2*inch,
+                bottomMargin=1.0*inch
+            )
+
+            elements = []
+            styles = getSampleStyleSheet()
+
+            title_style = ParagraphStyle(name='Title', fontSize=20, leading=24, textColor=colors.darkblue, spaceAfter=10, alignment=1)
+            heading_style = ParagraphStyle(name='Heading2', fontSize=14, leading=18, textColor=colors.darkblue, spaceAfter=6)
+            normal_style = styles['Normal']
+
+            def add_header(canvas, doc):
+                canvas.saveState()
+                if os.path.exists(LOGO_PATH):
+                    try:
+                        logo = ReportLabImage(LOGO_PATH, width=1.5*inch, height=1.0*inch)
+                        logo.drawOn(canvas, 0.4*inch, doc.height + doc.topMargin - 1.2*inch)
+                    except Exception as e:
+                        print(f"Logo error: {e}")
+                canvas.restoreState()
+
+            def add_footer(canvas, doc):
+                canvas.saveState()
+                canvas.setFont("Helvetica", 8)
+                canvas.setFillColor(colors.darkgray)
+
+                page_num = canvas.getPageNumber()
+                y = 0.3*inch
+
+                if page_num == 1:
+                    canvas.drawString(0.4*inch, y, f"{COMPANY_NAME} • {COMPANY_LOCATION} • {COMPANY_PHONE} • {COMPANY_EMAIL}")
+
+                    x = doc.width + doc.rightMargin - 4.5*inch
+                    canvas.drawString(x, y + 0.08*inch, "Follow us:")
+                    x += canvas.stringWidth("Follow us:", "Helvetica", 8) + 0.1*inch
+
+                    icon_size = 0.25*inch
+                    for platform, data in SOCIAL_ICONS.items():
+                        icon_path = data["icon"]
+                        url = data["url"]
+
+                        if os.path.exists(icon_path):
+                            try:
+                                icon = ReportLabImage(icon_path, width=icon_size, height=icon_size)
+                                icon.drawOn(canvas, x, y - 0.04*inch)
+                            except:
+                                canvas.drawString(x, y, platform[:3])
+                        else:
+                            canvas.drawString(x, y, platform[:3])
+
+                        canvas.linkURL(url, (x, y-0.08*inch, x+icon_size, y+icon_size+0.08*inch))
+                        x += icon_size + 0.15*inch
+
+                    canvas.setStrokeColor(colors.lightgrey)
+                    canvas.line(0.4*inch, y-0.15*inch, doc.width + doc.rightMargin - 0.4*inch, y-0.15*inch)
+
+                canvas.setFont("Helvetica-Oblique", 7)
+                canvas.drawCentredString(doc.width/2 + doc.leftMargin, 0.2*inch,
+                                         f"Page {page_num} • Confidential Document")
+
+                canvas.restoreState()
+
+            # Apply templates (no frames needed for full-page default)
+            doc.addPageTemplates([
+                PageTemplate(
+                    id='AllPages',
+                    onPage=add_header,
+                    onPageEnd=add_footer
+                )
+            ])
+
+            # Title Page
+            elements.append(Paragraph("High Prosper Services", title_style))
+            elements.append(Paragraph("Users Management Report", title_style))
+            elements.append(Spacer(1, 0.3*inch))
+            elements.append(Paragraph(f"Generated: {timezone.now().strftime('%B %d, %Y %H:%M')} by {request.user.get_full_name()}", normal_style))
+            elements.append(Spacer(1, 0.6*inch))
+
+            # Summary
+            elements.append(Paragraph("Summary", heading_style))
+            elements.append(Spacer(1, 0.15*inch))
+
+            summary_data = [
+                ["Total Users", total_users],
+                ["Online", total_online],
+                ["New Today", new_today],
+                ["New Month", new_month],
+                ["Inactive", inactive_users],
+            ]
+
+            summary_table = Table(summary_data, colWidths=[2.8*inch, 2.0*inch])
+            summary_table.setStyle(TableStyle([
+                ('BACKGROUND', (0,0), (-1,0), colors.lightblue),
+                ('TEXTCOLOR', (0,0), (-1,0), colors.black),
+                ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+                ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0,0), (-1,0), 10),
+                ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
+                ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+            ]))
+            elements.append(summary_table)
+            elements.append(Spacer(1, 0.4*inch))
+
+            # Pie Chart
+            elements.append(Paragraph("Users by Role", heading_style))
+            drawing = Drawing(350, 180)
+            pie = Pie()
+            top_roles = sorted(users_by_role.items(), key=lambda x: x[1], reverse=True)[:8]
+            others = sum(count for _, count in sorted(users_by_role.items())[8:])
+            pie.data = [count for _, count in top_roles] + [others]
+            pie.labels = [role.capitalize()[:12] for role, _ in top_roles] + ['Others']
+            pie.x = 80
+            pie.y = 40
+            pie.width = 160
+            pie.height = 160
+            drawing.add(pie)
+            elements.append(drawing)
+            elements.append(PageBreak())
+
+            # Compact Table
+            elements.append(Paragraph("Users List", heading_style))
+
+            table_data = [[
+                "ID", "User", "Name", "Email", "Phone", "Role", "Company", "Branch", "Login", "Joined", "Online", "Ver.", "Act."
+            ]]
+
+            for user in users:
+                company_name = getattr(user.company, 'name', '—') if user.company else '—'
+                branch_name = user.branch or '—'
+                last_login = user.last_login.strftime("%Y-%m-%d") if user.last_login else "—"
+                date_joined = user.date_joined.strftime("%Y-%m-%d")
+
+                table_data.append([
+                    str(user.id),
+                    user.username[:12] + '…' if len(user.username) > 12 else user.username,
+                    user.get_full_name()[:15] + '…' if len(user.get_full_name()) > 15 else user.get_full_name(),
+                    user.email[:20] + '…' if len(user.email) > 20 else user.email,
+                    user.phone[:12] + '...' if user.phone and len(user.phone) > 12 else (user.phone or "—"),
+                    user.role[:10].capitalize() if user.role else "—",
+                    company_name[:15] + '…' if len(company_name) > 15 else company_name,
+                    branch_name[:12] + '…' if len(branch_name) > 12 else branch_name,
+                    last_login,
+                    date_joined,
+                    "Y" if user.is_online else "N",
+                    "Y" if user.is_verified else "N",
+                    "Y" if user.is_active else "N"
+                ])
+
+            from reportlab.platypus import LongTable
+            table = LongTable(
+                table_data,
+                repeatRows=1,
+                colWidths=[0.5*inch, 1.0*inch, 1.2*inch, 1.5*inch, 0.8*inch, 0.7*inch, 1.0*inch, 0.8*inch, 0.9*inch, 0.8*inch, 0.5*inch, 0.5*inch, 0.5*inch]
+            )
+
+            table.setStyle(TableStyle([
+                ('BACKGROUND', (0,0), (-1,0), colors.darkblue),
+                ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+                ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+                ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0,0), (-1,0), 8),
+                ('BOTTOMPADDING', (0,0), (-1,0), 4),
+                ('GRID', (0,0), (-1,-1), 0.4, colors.grey),
+                ('FONTSIZE', (0,1), (-1,-1), 7),
+                ('LEFTPADDING', (0,0), (-1,-1), 2),
+                ('RIGHTPADDING', (0,0), (-1,-1), 2),
+                ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+                ('ALIGN', (3,1), (3,-1), 'LEFT'),
+                ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, colors.HexColor('#f8f9fa')]),
+            ]))
+
+            elements.append(table)
+
+            # Build PDF
+            doc.build(elements)
+            print("PDF generated successfully - returning response")
+            return response
+
+        except Exception as e:
+            print("PDF EXPORT FAILED!")
+            print(traceback.format_exc())
+            return JsonResponse({"error": str(e)}, status=500)
+
+
+
+class ExportUsersExcelAPIView(APIView):
+    """
+    GET /api/v1/users/admin/users/export_excel/
+
+    Generates professional Excel report with:
+    - Users List sheet (filtered data + conditional formatting + role-based colors)
+    - Summary Statistics sheet (dashboard with embedded charts)
+
+    Supports filtering via query params (same as list view):
+    - role
+    - search
+    - is_active (true/false)
+    - date_from / date_to (YYYY-MM-DD)
+    """
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        # ─── Apply Filters (sync with frontend) ─────────────────────────────────
+        queryset = CustomUser.objects.all()
+
+        role = request.query_params.get('role')
+        if role:
+            queryset = queryset.filter(role=role)
+
+        search = request.query_params.get('search')
+        if search:
+            queryset = queryset.filter(
+                Q(username__icontains=search) |
+                Q(email__icontains=search) |
+                Q(first_name__icontains=search) |
+                Q(last_name__icontains=search)
+            )
+
+        is_active_str = request.query_params.get('is_active')
+        if is_active_str is not None:
+            is_active_bool = is_active_str.lower() in ('true', '1', 'yes')
+            queryset = queryset.filter(is_active=is_active_bool)
+
+        date_from = request.query_params.get('date_from')
+        if date_from:
+            try:
+                dt_from = datetime.strptime(date_from, '%Y-%m-%d').date()
+                queryset = queryset.filter(date_joined__date__gte=dt_from)
+            except ValueError:
+                pass
+
+        date_to = request.query_params.get('date_to')
+        if date_to:
+            try:
+                dt_to = datetime.strptime(date_to, '%Y-%m-%d').date()
+                queryset = queryset.filter(date_joined__date__lte=dt_to)
+            except ValueError:
+                pass
+
+        users = queryset.order_by('-date_joined')
+
+        # ─── Calculate Summary Stats ────────────────────────────────────────────
+        total_users = users.count()
+        users_by_role = dict(
+            users.values('role').annotate(count=Count('id')).values_list('role', 'count')
+        )
+        total_online = users.filter(is_online=True).count()
+        total_offline = total_users - total_online
+
+        now = timezone.now()
+        today = now.date()
+        month_start = today.replace(day=1)
+        new_today = users.filter(date_joined__date=today).count()
+        new_month = users.filter(date_joined__gte=month_start).count()
+
+        blocked_users = 0  # Replace with real BlockedUser logic if needed
+        inactive_users = users.filter(is_active=True, last_seen__lt=now - timedelta(days=30)).count()
+        deleted_users = 0  # Add soft-delete later if needed
+
+        active_last_week = users.filter(last_seen__gte=now - timedelta(days=7)).count()
+        performance_percentage = round((active_last_week / total_users * 100), 1) if total_users > 0 else 0
+
+        # Daily new users trend (last 30 days for line chart)
+        daily_new = []
+        for day in range(29, -1, -1):
+            day_date = today - timedelta(days=day)
+            count = users.filter(date_joined__date=day_date).count()
+            daily_new.append((day_date.strftime('%Y-%m-%d'), count))
+
+        # ─── Create Workbook ────────────────────────────────────────────────────
+        wb = Workbook()
+        ws_list = wb.active
+        ws_list.title = "Users List"
+
+        # ─── SHEET 1: Users List ────────────────────────────────────────────────
+        # Title
+        ws_list.merge_cells('A1:O1')
+        ws_list['A1'] = "High Prosper Services - Users List"
+        ws_list['A1'].font = Font(size=10, bold=True, color="FFFFFF")
+        ws_list['A1'].fill = PatternFill(start_color="1F497D", end_color="1F497D", fill_type="solid")
+        ws_list['A1'].alignment = Alignment(horizontal="center", vertical="center")
+
+        ws_list.merge_cells('A2:O2')
+        filter_summary = f"Generated: {timezone.now().strftime('%Y-%m-%d %H:%M:%S')} | Filtered: {total_users} users"
+        if role: filter_summary += f" | Role: {role}"
+        if search: filter_summary += f" | Search: '{search}'"
+        ws_list['A2'].value = filter_summary
+        ws_list['A2'].alignment = Alignment(horizontal="center")
+
+        # Headers
+        headers = [
+            "ID", "Username", "Full Name", "Email", "Phone", "Role",
+            "Company", "Branch", "Last Login", "Date Joined",
+            "Online", "Verified", "Active"
+        ]
+
+        for col_num, header in enumerate(headers, 1):
+            cell = ws_list.cell(row=4, column=col_num, value=header)
+            cell.font = Font(bold=True, color="FFFFFF")
+            cell.fill = PatternFill(start_color="1F497D", end_color="1F497D", fill_type="solid")
+            cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+
+        # Data rows
+        row_num = 5
+        for user in users:
+            company_name = getattr(user.company, 'name', '—') if user.company else '—'
+            branch_name = user.branch or '—'
+
+            last_login = user.last_login.strftime("%Y-%m-%d %H:%M") if user.last_login else "Never"
+            date_joined = user.date_joined.strftime("%Y-%m-%d")
+
+            online_text = "Yes" if user.is_online else "No"
+            verified_text = "Yes" if user.is_verified else "No"
+            active_text = "Yes" if user.is_active else "No"
+
+            ws_list.append([
+                user.id,
+                user.username,
+                user.get_full_name(),
+                user.email,
+                user.phone or "—",
+                user.role.capitalize(),
+                company_name,
+                branch_name,
+                last_login,
+                date_joined,
+                online_text,
+                verified_text,
+                active_text
+            ])
+
+            # Alternate row color
+            if row_num % 2 == 0:
+                for col in range(1, len(headers) + 1):
+                    ws_list.cell(row=row_num, column=col).fill = PatternFill(start_color="F2F2F2", end_color="F2F2F2", fill_type="solid")
+
+            row_num += 1
+
+        # Conditional formatting for status columns
+        green_fill = PatternFill(start_color="C6EFCE", end_color="C6EFCE", fill_type="solid")
+        red_fill = PatternFill(start_color="FFC7CE", end_color="FFC7CE", fill_type="solid")
+        orange_fill = PatternFill(start_color="FFEB9C", end_color="FFEB9C", fill_type="solid")
+
+        last_row = row_num - 1
+        ws_list.conditional_formatting.add(f'K5:K{last_row}', CellIsRule(operator='equal', formula=['"Yes"'], fill=green_fill))
+        ws_list.conditional_formatting.add(f'K5:K{last_row}', CellIsRule(operator='equal', formula=['"No"'], fill=red_fill))
+        ws_list.conditional_formatting.add(f'L5:L{last_row}', CellIsRule(operator='equal', formula=['"Yes"'], fill=green_fill))
+        ws_list.conditional_formatting.add(f'L5:L{last_row}', CellIsRule(operator='equal', formula=['"No"'], fill=orange_fill))
+        ws_list.conditional_formatting.add(f'M5:M{last_row}', CellIsRule(operator='equal', formula=['"Yes"'], fill=green_fill))
+        ws_list.conditional_formatting.add(f'M5:M{last_row}', CellIsRule(operator='equal', formula=['"No"'], fill=red_fill))
+
+        # Auto-size columns on list sheet
+        for col in range(1, len(headers) + 1):
+            column_letter = get_column_letter(col)
+            max_length = 0
+            for row in range(4, row_num):
+                cell = ws_list.cell(row=row, column=col)
+                try:
+                    if len(str(cell.value or '')) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            ws_list.column_dimensions[column_letter].width = max_length + 4
+
+        ws_list.freeze_panes = "A5"
+
+        # ─── SHEET 2: Summary Statistics with Charts ────────────────────────────
+        ws_summary = wb.create_sheet(title="Summary Statistics")
+
+        # Title
+        ws_summary.merge_cells('A1:F1')
+        ws_summary['A1'] = "Summary Statistics Dashboard"
+        ws_summary['A1'].font = Font(size=18, bold=True, color="1F497D")
+        ws_summary['A1'].alignment = Alignment(horizontal="center")
+
+        ws_summary.merge_cells('A2:F2')
+        ws_summary['A2'] = f"Generated: {timezone.now().strftime('%Y-%m-%d %H:%M')} | Total Users: {total_users}"
+        ws_summary['A2'].alignment = Alignment(horizontal="center")
+
+        # Key Metrics (A4:B12)
+        metrics = [
+            ("Total Users", total_users),
+            ("Online Users", total_online),
+            ("Offline Users", total_offline),
+            ("New Today", new_today),
+            ("New This Month", new_month),
+            ("Blocked/Inactive", blocked_users + inactive_users),
+            ("Performance %", f"{performance_percentage}%"),
+        ]
+
+        for i, (label, value) in enumerate(metrics, start=4):
+            ws_summary[f'A{i}'] = label
+            ws_summary[f'A{i}'].font = Font(bold=True)
+            ws_summary[f'B{i}'] = value
+            ws_summary[f'B{i}'].alignment = Alignment(horizontal="right")
+
+        # Users by Role Pie Chart Data (D4:E12)
+        sorted_roles = sorted(users_by_role.items(), key=lambda x: x[1], reverse=True)
+        top_roles = sorted_roles[:8]
+        others_count = sum(count for _, count in sorted_roles[8:])
+
+        ws_summary['D4'] = "Users by Role"
+        ws_summary['D4'].font = Font(bold=True)
+        row = 5
+        for role, count in top_roles:
+            ws_summary[f'D{row}'] = role.capitalize()
+            ws_summary[f'E{row}'] = count
+            row += 1
+        if others_count > 0:
+            ws_summary[f'D{row}'] = "Others"
+            ws_summary[f'E{row}'] = others_count
+
+        # ─── PIE CHART: Users by Role ───────────────────────────────────────────
+        pie = PieChart()
+        labels = Reference(ws_summary, min_col=4, min_row=5, max_row=row)
+        data = Reference(ws_summary, min_col=5, min_row=5, max_row=row)
+        pie.add_data(data)
+        pie.set_categories(labels)
+        pie.title = "Distribution by Role"
+        pie.dataLabels = DataLabelList()
+        pie.dataLabels.showVal = True
+        pie.dataLabels.showPercent = True
+        pie.legend.position = 'b'
+        ws_summary.add_chart(pie, "G4")
+
+        # ─── BAR CHART: Key Metrics ─────────────────────────────────────────────
+        bar = BarChart()
+        bar.title = "Key User Metrics"
+        bar.y_axis.title = "Count"
+        bar.x_axis.title = "Category"
+        data_ref = Reference(ws_summary, min_col=2, min_row=4, max_row=10)
+        cats = Reference(ws_summary, min_col=1, min_row=5, max_row=10)
+        bar.add_data(data_ref, titles_from_data=True)
+        bar.set_categories(cats)
+        bar.legend = None
+        ws_summary.add_chart(bar, "A15")
+
+        # ─── LINE CHART: New Users Trend (Last 30 Days) ─────────────────────────
+        line = LineChart()
+        line.title = "New Users - Last 30 Days"
+        line.y_axis.title = "New Users"
+        line.x_axis.title = "Date"
+
+        # Write trend data to summary sheet
+        ws_summary['G20'] = "Date"
+        ws_summary['H20'] = "New Users"
+        for i, (date, count) in enumerate(daily_new, start=21):
+            ws_summary[f'G{i}'] = date
+            ws_summary[f'H{i}'] = count
+
+        line_dates = Reference(ws_summary, min_col=7, min_row=20, max_row=len(daily_new)+20)
+        line_data = Reference(ws_summary, min_col=8, min_row=20, max_row=len(daily_new)+20)
+        line.add_data(line_data, titles_from_data=False)
+        line.set_categories(line_dates)
+        ws_summary.add_chart(line, "J20")
+
+        # Auto-size columns on summary sheet
+        for col in ['A', 'B', 'D', 'E', 'G', 'H']:
+            max_length = 0
+            for row in range(1, ws_summary.max_row + 1):
+                cell = ws_summary[f'{col}{row}']
+                try:
+                    if len(str(cell.value or '')) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            ws_summary.column_dimensions[col].width = max_length + 4
+
+        # Final response
+        response = HttpResponse(
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        response['Content-Disposition'] = 'attachment; filename="high_prosper_users_report.xlsx"'
+        wb.save(response)
+        return response
+
+class BlockedUserAnalyticsAPIView(APIView):
+    """
+    GET /api/v1/users/admin/blocked-analytics/
+
+    Advanced analytics for blocked users:
+    - Total blocks
+    - Blocks by time periods (today, week, month)
+    - Top blockers/blocked users
+    - Block trends over time
+    - Percentage of users involved in blocks
+    - Recent blocks list
+    """
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        now = timezone.now()
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        week_start = today_start - timedelta(days=7)
+        month_start = today_start - timedelta(days=30)
+
+        # All blocks
+        all_blocks = BlockedUser.objects.all()
+        total_blocks = all_blocks.count()
+
+        # Time-based stats
+        blocks_today = all_blocks.filter(created_at__gte=today_start).count()
+        blocks_week = all_blocks.filter(created_at__gte=week_start).count()
+        blocks_month = all_blocks.filter(created_at__gte=month_start).count()
+
+        # Top blockers (users who blocked the most)
+        top_blockers = all_blocks.values('blocker__username').annotate(
+            count=Count('id')
+        ).order_by('-count')[:10]  # Top 10
+
+        # Top blocked (users blocked by most people)
+        top_blocked = all_blocks.values('blocked__username').annotate(
+            count=Count('id')
+        ).order_by('-count')[:10]
+
+        # Block trends (daily counts last 30 days)
+        trends = []
+        for day in range(29, -1, -1):
+            day_start = today_start - timedelta(days=day)
+            day_end = day_start + timedelta(days=1)
+            count = all_blocks.filter(created_at__range=(day_start, day_end)).count()
+            trends.append({
+                'date': day_start.strftime('%Y-%m-%d'),
+                'blocks': count
+            })
+
+        # Percentages
+        total_users = User.objects.count()
+        users_who_blocked = all_blocks.values('blocker').distinct().count()
+        users_blocked = all_blocks.values('blocked').distinct().count()
+        blocking_percentage = round((users_who_blocked / total_users * 100) if total_users else 0, 1)
+        blocked_percentage = round((users_blocked / total_users * 100) if total_users else 0, 1)
+
+        # Recent blocks (last 20)
+        recent_blocks = all_blocks.order_by('-created_at')[:20].values(
+            'id',
+            'blocker__username',
+            'blocked__username',
+            'created_at'
+        )
+
+        data = {
+            "total_blocks": total_blocks,
+            "blocks_today": blocks_today,
+            "blocks_week": blocks_week,
+            "blocks_month": blocks_month,
+            "top_blockers": list(top_blockers),
+            "top_blocked": list(top_blocked),
+            "trends": trends,
+            "blocking_percentage": blocking_percentage,
+            "blocked_percentage": blocked_percentage,
+            "recent_blocks": list(recent_blocks),
+        }
+
+        return Response(data)

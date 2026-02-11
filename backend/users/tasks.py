@@ -1,3 +1,4 @@
+import base64
 import uuid
 from datetime import timedelta
 
@@ -10,11 +11,92 @@ from django.db.models import Sum
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from io import BytesIO
-from .models import Payment, Customer
+from .models import Post, CustomUser
+from payments.models import Payment
 from .views import analytics_summary  # Reuse your summary logic
 from django.template.loader import render_to_string
 from django.utils import timezone
-from .models import Payment, Customer
+from datetime import timedelta
+from customers.models import Customer
+from .admin import SPAM_KEYWORDS  # Import if defined in admin.py, or move to models/utils
+
+@shared_task(name='flag_suspicious_posts')
+def flag_suspicious_posts():
+    print("Running automatic spam detection...")
+    flagged = 0
+    threshold = 50
+
+    recent_threshold = timezone.now() - timedelta(days=7)  # Only check recent posts
+
+    for post in Post.objects.filter(created_at__gte=recent_threshold):
+        score = 0
+
+        if (not post.content or len(post.content) < 15) and not post.media:
+            score += 40
+        if post.views > 0 and post.shares / post.views > 5:
+            score += 30
+        if any(kw in (post.content or '').lower() for kw in SPAM_KEYWORDS):
+            score += 25
+        similar = Post.objects.filter(user=post.user, content=post.content).count() - 1
+        if similar > 2:
+            score += 30
+        recent_count = Post.objects.filter(
+            user=post.user,
+            created_at__gte=timezone.now() - timedelta(hours=1)
+        ).count()
+        if recent_count > 5:
+            score += 35
+
+        if score >= threshold:
+            post.privacy = 'private'
+            post.save(update_fields=['privacy'])
+            flagged += 1
+
+    print(f"Flagged {flagged} suspicious posts automatically.")
+    return flagged
+
+@shared_task(name='auto_flag_spam_posts')
+def auto_flag_spam_posts():
+    """
+    Runs periodically - finds and flags suspicious posts
+    """
+    print("Starting automatic spam flagging...")
+    flagged = 0
+    threshold = 60  # stricter for automatic action
+
+    # Only check relatively recent posts
+    recent = timezone.now() - timedelta(days=14)
+
+    for post in Post.objects.filter(created_at__gte=recent):
+        score = 0
+
+        if (not post.content or len(post.content.strip()) < 15) and not post.media:
+            score += 45
+        if post.views > 0 and post.shares / post.views > 6:
+            score += 35
+        if any(kw in (post.content or '').lower() for kw in SPAM_KEYWORDS):
+            score += 30
+        similar = Post.objects.filter(
+            user=post.user,
+            content=post.content
+        ).exclude(id=post.id).count()
+        if similar > 3:
+            score += 35
+        recent_count = Post.objects.filter(
+            user=post.user,
+            created_at__gte=timezone.now() - timedelta(hours=1)
+        ).count()
+        if recent_count > 8:
+            score += 40
+
+        if score >= threshold:
+            post.privacy = 'private'
+            post.is_announcement = False
+            post.save(update_fields=['privacy', 'is_announcement'])
+            flagged += 1
+
+    print(f"Auto-flagged {flagged} suspicious posts.")
+    return flagged
 
 @shared_task
 def send_weekly_analytics_report():
@@ -192,3 +274,12 @@ def send_notification(notification_id):
         return send_mtn_sms_notification.delay(notification.recipient.phone_number, notification.message)
     else:
         return "Unsupported notification type"
+
+@shared_task
+def clean_online_status():
+    threshold = timezone.now() - timedelta(minutes=10)
+    updated = CustomUser.objects.filter(
+        is_online=True,
+        last_seen__lt=threshold
+    ).update(is_online=False)
+    print(f"Set {updated} users offline.")

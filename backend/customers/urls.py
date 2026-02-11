@@ -15,16 +15,19 @@ from .views import (
     send_message,
     collector_summary,
     gps_customer_map, verify_email, resend_verification, send_phone_otp,
-    verify_phone_otp, test_customers,
+    verify_phone_otp, test_customers, SectorViewSet, CellViewSet, ServiceRequestViewSet,
 )
 
 # ============================
 # REST FRAMEWORK ROUTER
 # ============================
 router = DefaultRouter()
+router.register(r'sectors', SectorViewSet, basename='sector')
+router.register(r'cells', CellViewSet, basename='cell')
 router.register(r'customers', CustomerViewSet, basename='customers')
 router.register(r'complaints', ComplaintViewSet, basename='complaint')
 router.register(r'villages', VillageViewSet, basename='village')
+router.register(r'service-requests', ServiceRequestViewSet)
 
 # ============================
 # URL PATTERNS

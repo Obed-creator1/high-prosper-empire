@@ -7,6 +7,7 @@ import Cookies from "js-cookie";
 import { Sun, Moon, LogOut, Settings, User, ChevronDown, Search, Users, Receipt, FileText, Truck, UserCheck, Package, Building2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import NotificationBell from "./NotificationBell";
 import api from "@/lib/api";
 
@@ -35,6 +36,17 @@ export default function Navbar({
                                    sidebarOpen = false,
                                    setSidebarOpen = () => {},
                                }: NavbarProps) {
+    const router = useRouter();
+
+    // ─── User State (Real Data from Backend) ────────────────────────────────
+    const [user, setUser] = useState<{
+        username: string;
+        full_name?: string;
+        profile_picture_url?: string | null;
+        role?: string;
+    } | null>(null);
+    const [loadingUser, setLoadingUser] = useState(true);
+
     const [darkMode, setDarkMode] = useState(false);
     const [profileOpen, setProfileOpen] = useState(false);
     const [searchOpen, setSearchOpen] = useState(false);
@@ -53,7 +65,7 @@ export default function Navbar({
 
     const [username, setUsername] = useState("Collector");
     const [userRole, setUserRole] = useState("Field Agent");
-    const [profilePic, setProfilePic] = useState("/images/avatar-placeholder.png");
+    const profilePic = user?.profile_picture_url || "/images/avatar-placeholder.png";
 
     const profileRef = useRef<HTMLDivElement>(null);
     const searchRef = useRef<HTMLDivElement>(null);
@@ -86,22 +98,34 @@ export default function Navbar({
         });
     };
 
-    // Load user & theme (unchanged)
+    // ─── Fetch Real User Profile on Mount ───────────────────────────────────
     useEffect(() => {
-        const user = Cookies.get("username");
-        const role = Cookies.get("role") || "Field Agent";
-        const pic = Cookies.get("profilePic") || "/images/avatar-placeholder.png";
-        if (user) setUsername(user);
-        setUserRole(role);
-        setProfilePic(pic);
+        const fetchUser = async () => {
+            try {
+                const res = await api.get("/users/profile/");
+                setUser(res.data);
+            } catch (err) {
+                console.error("Failed to load user profile:", err);
+                // Fallback
+                setUser({
+                    username: "Guest",
+                    full_name: "User",
+                    profile_picture_url: null,
+                    role: "Unknown",
+                });
+            } finally {
+                setLoadingUser(false);
+            }
+        };
 
-        const saved = localStorage.getItem("theme");
-        if (saved === "dark" || (!saved && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
-            document.documentElement.classList.add("dark");
-            setDarkMode(true);
-        }
+        fetchUser();
 
-        if (window.gtag) window.gtag("set", { user_role: role });
+        // Theme from localStorage or system preference
+        const savedTheme = localStorage.getItem("theme");
+        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        const isDark = savedTheme === "dark" || (!savedTheme && prefersDark);
+        setDarkMode(isDark);
+        document.documentElement.classList.toggle("dark", isDark);
     }, []);
 
     const toggleTheme = () => {
@@ -276,6 +300,9 @@ export default function Navbar({
             </>
         );
     };
+
+    const displayName = user?.full_name || user?.username || "User";
+    const displayRole = user?.role || "User";
 
     return (
         <>
@@ -489,75 +516,115 @@ export default function Navbar({
                         {darkMode ? <Sun size={20} /> : <Moon size={20} />}
                     </button>
                     <NotificationBell notifications={notifications} />
-                    {/* Profile dropdown */}
+                    {/* Profile Dropdown */}
                     <div ref={profileRef} className="relative">
                         <button
                             onClick={() => setProfileOpen(!profileOpen)}
-                            className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-all"
+                            className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            aria-expanded={profileOpen}
+                            aria-haspopup="true"
                         >
-                            <Image
-                                src={profilePic}
-                                alt={username}
-                                width={40}
-                                height={40}
-                                className="rounded-full border-2 border-purple-500/50"
-                            />
-                            <div className="text-left hidden md:block">
-                                <p className="font-medium text-gray-900 dark:text-gray-100">{username}</p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">{userRole}</p>
+                            <div className="relative">
+                                <Image
+                                    src={profilePic}
+                                    alt={displayName}
+                                    width={40}
+                                    height={40}
+                                    className="rounded-full border-2 border-purple-500/50 object-cover"
+                                    priority
+                                />
+                                {/* Online status dot */}
+                                <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-gray-900" />
                             </div>
-                            <ChevronDown size={16} className={`transition-transform ${profileOpen ? "rotate-180" : ""}`} />
+
+                            <div className="text-left hidden md:block">
+                                <p className="font-medium text-gray-900 dark:text-gray-100 truncate max-w-[140px]">
+                                    {displayName}
+                                </p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">
+                                    {displayRole}
+                                </p>
+                            </div>
+
+                            <ChevronDown
+                                size={16}
+                                className={`transition-transform ${profileOpen ? "rotate-180" : ""}`}
+                            />
                         </button>
 
+                        {/* Dropdown Menu */}
                         <AnimatePresence>
                             {profileOpen && (
                                 <motion.div
                                     initial={{ opacity: 0, y: -10, scale: 0.95 }}
                                     animate={{ opacity: 1, y: 0, scale: 1 }}
                                     exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                                    className="absolute right-0 mt-3 w-72 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden"
+                                    transition={{ duration: 0.2 }}
+                                    className="absolute right-0 mt-3 w-80 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50"
                                 >
-                                    <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                                    {/* User Info Header */}
+                                    <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-800 dark:to-gray-700">
                                         <div className="flex items-center gap-4">
-                                            <Image
-                                                src={profilePic}
-                                                alt={username}
-                                                width={64}
-                                                height={64}
-                                                className="rounded-full border-4 border-purple-500/30"
-                                            />
+                                            <div className="relative">
+                                                <Image
+                                                    src={profilePic}
+                                                    alt={displayName}
+                                                    width={64}
+                                                    height={64}
+                                                    className="rounded-full border-4 border-purple-500/30 object-cover shadow-md"
+                                                />
+                                                <span className="absolute bottom-1 right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-gray-900" />
+                                            </div>
                                             <div>
-                                                <p className="font-bold text-lg">{username}</p>
-                                                <p className="text-sm text-gray-500 dark:text-gray-400">{userRole}</p>
-                                                <p className="text-xs text-gray-400 mt-1">ID: #{Cookies.get("userId") || "000"}</p>
+                                                <p className="font-bold text-lg text-gray-900 dark:text-white">
+                                                    {displayName}
+                                                </p>
+                                                <p className="text-sm text-gray-600 dark:text-gray-300">
+                                                    @{user?.username}
+                                                </p>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                    Role: {displayRole}
+                                                </p>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="p-4 space-y-2">
+                                    {/* Menu Items */}
+                                    <div className="p-4 space-y-1">
                                         <button
-                                            onClick={() => window.location.href = "/profile"}
-                                            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                                            onClick={() => {
+                                                setProfileOpen(false);
+                                                router.push("/profile");
+                                            }}
+                                            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition text-left"
                                         >
-                                            <User size={18} />
-                                            <span>My Profile</span>
+                                            <User size={18} className="text-purple-600" />
+                                            <span className="font-medium">My Profile</span>
                                         </button>
+
                                         <button
-                                            onClick={() => window.location.href = "/settings"}
-                                            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                                            onClick={() => {
+                                                setProfileOpen(false);
+                                                router.push("/settings");
+                                            }}
+                                            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition text-left"
                                         >
-                                            <Settings size={18} />
-                                            <span>Settings</span>
+                                            <Settings size={18} className="text-blue-600" />
+                                            <span className="font-medium">Settings</span>
                                         </button>
                                     </div>
 
+                                    {/* Logout */}
                                     <div className="border-t border-gray-200 dark:border-gray-700 p-4">
                                         <button
-                                            onClick={handleLogout}
-                                            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 transition"
+                                            onClick={() => {
+                                                setProfileOpen(false);
+                                                handleLogout();
+                                            }}
+                                            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 transition"
                                         >
                                             <LogOut size={18} />
-                                            <span>Logout</span>
+                                            <span className="font-medium">Logout</span>
                                         </button>
                                     </div>
                                 </motion.div>

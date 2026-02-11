@@ -3,7 +3,6 @@ from django.contrib.humanize.templatetags.humanize import intcomma
 from django.db import models
 from django.core.validators import MinValueValidator
 from django.utils import timezone
-from customers.models import Customer
 from stripe import Invoice
 from users.models import CustomUser
 from decimal import Decimal
@@ -12,6 +11,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 import requests
 from django.conf import settings
+from customers.models import Customer
 
 class PaymentMethod(models.Model):
     METHOD_TYPES = (
@@ -140,7 +140,20 @@ class Payment(models.Model):
         ('Refunded', 'Refunded'),
     )
     uid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
-    customer = models.ForeignKey(Customer, on_delete=models.PROTECT, related_name='payments')
+    customer = models.ForeignKey(
+        'customers.Customer',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='payments'
+    )
+    service_request = models.ForeignKey(
+        'customers.ServiceRequest',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='payments'
+    )
     invoice = models.ForeignKey(Invoice, null=True, blank=True, on_delete=models.SET_NULL)
     amount = models.DecimalField(max_digits=14, decimal_places=2)
     fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)

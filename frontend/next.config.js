@@ -1,39 +1,80 @@
-// next.config.js – High Prosper Services (Next.js 16.1.1 Optimized)
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    // Server Actions – Secure (CSRF protection)
+    // ─── Core Settings ────────────────────────────────────────────────────────
+    reactStrictMode: false,
+
+    // ─── Server Actions Security ──────────────────────────────────────────────
     experimental: {
         serverActions: {
             allowedOrigins: [
-                "localhost:3000",
-                "127.0.0.1:3000",
-                "192.168.1.104:3000",
-                "highprosper.rw", // Add your production domain
-                // Add staging/preview domains if needed
+                'localhost:3000',
+                '127.0.0.1:3000',
+                '192.168.*:3000',
+                'highprosper.rw',
+                '*.highprosper.rw',
             ],
         },
     },
 
-    // Images – Optimized for your assets + external sources
+    // ─── Image Optimization ───────────────────────────────────────────────────
     images: {
-        unoptimized: true, // Required for canvas exports / sharp issues
+        // Keep optimization ON (no unoptimized: true)
         remotePatterns: [
-            { protocol: "http", hostname: "localhost", port: "3000", pathname: "/**" },
-            { protocol: "http", hostname: "127.0.0.1", port: "3000", pathname: "/**" },
-            { protocol: "http", hostname: "192.168.1.104", port: "3000", pathname: "/**" },
-            { protocol: "https", hostname: "**" }, // Allows all external HTTPS images
+            // This is enough when using proxy (relative paths)
+            {
+                protocol: 'http',
+                hostname: 'localhost',
+                pathname: '/media/**',
+            },
+            // Production
+            {
+                protocol: 'https',
+                hostname: 'highprosper.rw',
+                pathname: '/media/**',
+            },
+            {
+                protocol: 'https',
+                hostname: 'api.highprosper.rw',
+                pathname: '/media/**',
+            },
+            // Optional: allow external (restrict in prod)
+            {
+                protocol: 'https',
+                hostname: '**',
+            },
         ],
+
+        deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+        imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+        minimumCacheTTL: 60,
+        formats: ['image/avif', 'image/webp'],
     },
 
-    // Optional: Keep if you need it (some libs still double-render)
-    reactStrictMode: false,
+    // ─── Proxy: This is the magic that fixes EVERYTHING ───────────────────────
+    async rewrites() {
+        return [
+            {
+                source: '/media/:path*',
+                destination: 'http://127.0.0.1:8000/media/:path*', // dev
+                // Production (use env var):
+                // destination: `${process.env.BACKEND_URL || 'https://api.highprosper.rw'}/media/:path*`,
+            },
+        ];
+    },
 
-    // Logging – Great for debugging API calls
+    // ─── Debugging ────────────────────────────────────────────────────────────
     logging: {
         fetches: {
             fullUrl: true,
         },
+    },
+
+    // ─── Performance ──────────────────────────────────────────────────────────
+    swcMinify: true,
+    compiler: {
+        removeConsole: process.env.NODE_ENV === 'production' ? {
+            exclude: ['error', 'warn'],
+        } : false,
     },
 };
 

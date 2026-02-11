@@ -10,7 +10,7 @@ from django.db.models import Count, Sum, Avg
 from django.utils import timezone
 from .models import (
     Collector, WasteCollectionSchedule, VehicleTurnCount,
-    CollectorTarget, CollectorTask, CollectorLocationHistory
+    CollectorTask, CollectorLocationHistory
 )
 from fleet.models import Vehicle
 from users.models import CustomUser
@@ -318,16 +318,6 @@ class VehicleTurnCountAdmin(admin.ModelAdmin):
     search_fields = ('vehicle__number_plate', 'village__name')
     date_hierarchy = 'date'
 
-
-# ====================================================
-# Collector Target Admin
-# ====================================================
-@admin.register(CollectorTarget)
-class CollectorTargetAdmin(admin.ModelAdmin):
-    list_display = ('collector', 'village', 'month', 'year', 'target_amount', 'collected_amount', 'percentage_achieved', 'rank')
-    list_filter = ('month', 'year', 'collector', 'village')
-    search_fields = ('collector__user__username', 'village__name')
-    readonly_fields = ('percentage_achieved', 'remaining_amount', 'rank')
 
 
 # ====================================================

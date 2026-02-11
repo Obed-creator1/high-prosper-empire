@@ -1,0 +1,80 @@
+/* static/admin/css/dashboard-widgets.css */
+
+/* Main dashboard container */
+.dashboard-widgets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+/* Individual widget card */
+.widget-card {
+    flex: 1 1 300px;
+    min-width: 280px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.widget-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
+
+/* Widget header */
+.widget-header {
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+/* Widget content */
+.widget-content {
+    padding: 20px;
+    text-align: center;
+}
+
+.widget-number {
+    font-size: 3rem;
+    font-weight: bold;
+    margin: 10px 0;
+    color: #1e40af;
+}
+
+.widget-label {
+    font-size: 1.1rem;
+    color: #4b5563;
+    margin-bottom: 12px;
+}
+
+.widget-action {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 8px 16px;
+    background: #eff6ff;
+    color: #2563eb;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+
+.widget-action:hover {
+    background: #dbeafe;
+}
+
+/* Status badges */
+.status-active {
+    color: #10b981;
+    font-weight: bold;
+}
+
+.status-inactive {
+    color: #ef4444;
+    font-weight: bold;
+}

@@ -8,11 +8,11 @@ from django.db.models import Sum, Count, Avg, Q
 from datetime import timedelta
 from .models import (
     Collector, WasteCollectionSchedule, VehicleTurnCount,
-    CollectorTarget, CollectorTask, CollectorLocationHistory
+    CollectorTask, CollectorLocationHistory
 )
 from .serializers import (
     CollectorSerializer, WasteCollectionScheduleSerializer,
-    VehicleTurnCountSerializer, CollectorTargetSerializer,
+    VehicleTurnCountSerializer,
     CollectorTaskSerializer, CollectorLocationHistorySerializer
 )
 from .utils.notifications import notify_collector
@@ -20,6 +20,8 @@ from django.http import HttpResponse
 import csv
 from weasyprint import HTML
 from io import BytesIO
+
+from users.permissions import IsAdminOrManagerOrCEO
 
 
 class CollectorViewSet(viewsets.ModelViewSet):
@@ -123,12 +125,6 @@ class VehicleTurnCountViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsAdminUser]
 
 
-class CollectorTargetViewSet(viewsets.ModelViewSet):
-    queryset = CollectorTarget.objects.all()
-    serializer_class = CollectorTargetSerializer
-    permission_classes = [IsAuthenticated, IsAdminUser]
-
-
 class CollectorTaskViewSet(viewsets.ModelViewSet):
     queryset = CollectorTask.objects.all()
     serializer_class = CollectorTaskSerializer
@@ -155,17 +151,6 @@ class CollectorAnalyticsViewSet(viewsets.ViewSet):
         }
         return Response(data)
 
-    @action(detail=False, methods=['get'])
-    def performance_trends(self, request):
-        last_12_months = timezone.now() - timedelta(days=365)
-        trends = CollectorTarget.objects.filter(year__gte=last_12_months.year).values(
-            'month', 'year'
-        ).annotate(
-            total_target=Sum('target_amount'),
-            total_collected=Sum('collected_amount')
-        ).order_by('year', 'month')
-
-        return Response(list(trends))
 
     @action(detail=False, methods=['get'])
     def top_performers(self, request):

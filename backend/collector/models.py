@@ -197,43 +197,6 @@ class VehicleTurnCount(models.Model):
     def __str__(self):
         return f"{self.vehicle} - {self.village} - {self.date} ({self.turn_count} turns)"
 
-class CollectorTarget(models.Model):
-    """
-    Monthly Target per Collector per Village
-    """
-    collector = models.ForeignKey(Collector, on_delete=models.CASCADE, related_name='collector_targets')
-    village = models.ForeignKey(Village, on_delete=models.CASCADE)
-    month = models.PositiveSmallIntegerField()  # 1-12
-    year = models.PositiveSmallIntegerField()
-
-    # Target & Actuals
-    target_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-    collected_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-    previous_month_collected = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-
-    # Auto-calculated
-    percentage_achieved = models.DecimalField(max_digits=5, decimal_places=2, default=0)
-    remaining_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-
-    # Ranking (auto-calculated)
-    rank = models.PositiveSmallIntegerField(null=True, blank=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        unique_together = ('collector', 'village', 'month', 'year')
-        indexes = [
-            models.Index(fields=['collector', 'month', 'year']),
-            models.Index(fields=['percentage_achieved']),
-        ]
-
-    def __str__(self):
-        return f"{self.collector} - {self.village} ({self.month}/{self.year})"
-
-    def save(self, *args, **kwargs):
-        self.remaining_amount = self.target_amount - self.collected_amount
-        self.percentage_achieved = (self.collected_amount / self.target_amount * 100) if self.target_amount > 0 else 0
-        super().save(*args, **kwargs)
-
 
 class CollectorTask(models.Model):
     """

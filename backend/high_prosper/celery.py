@@ -1,6 +1,7 @@
 # high_prosper/celery.py — FINAL 2026-PROOF (All Apps + Global Push Notifications)
 import os
 import sys
+from datetime import timedelta
 from pathlib import Path
 from celery import Celery
 from celery.signals import worker_process_init
@@ -126,6 +127,24 @@ app.conf.beat_schedule = {
     'cleanup-inactive-push-subscriptions': {
         'task': 'notifications.tasks.cleanup_inactive_subscriptions',
         'schedule': crontab(hour=3, minute=0),  # Daily at 3 AM
+    },
+    'flag-suspicious-posts-every-hour': {
+        'task': 'users.tasks.flag_suspicious_posts',
+        'schedule': crontab(minute=0, hour='*'),  # every hour
+    },
+    'auto-flag-spam-every-30-minutes': {
+        'task': 'users.tasks.auto_flag_spam_posts',
+        'schedule': crontab(minute='*/30'),  # every 30 minutes
+        # 'schedule': crontab(minute=0, hour='*'),  # every hour
+    },
+    'clean-online-every-5-minutes': {
+        'task': 'users.tasks.clean_online_status',
+        'schedule': timedelta(minutes=5),
+    },
+    'cleanup-push-subscriptions-nightly': {
+        'task': 'notifications.tasks.cleanup_inactive_subscriptions',
+        'schedule': crontab(hour=3, minute=15),  # 3:15 AM daily
+        'options': {'queue': 'low-priority'}
     },
 }
 

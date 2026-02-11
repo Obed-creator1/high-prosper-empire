@@ -3,7 +3,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
     CollectorViewSet, WasteCollectionScheduleViewSet,
-    VehicleTurnCountViewSet, CollectorTargetViewSet,
+    VehicleTurnCountViewSet,
     CollectorTaskViewSet, CollectorLocationHistoryViewSet,
     CollectorAnalyticsViewSet
 )
@@ -12,7 +12,6 @@ router = DefaultRouter()
 router.register(r'collectors', CollectorViewSet)
 router.register(r'schedules', WasteCollectionScheduleViewSet)
 router.register(r'turn-counts', VehicleTurnCountViewSet)
-router.register(r'targets', CollectorTargetViewSet)
 router.register(r'tasks', CollectorTaskViewSet)
 router.register(r'locations', CollectorLocationHistoryViewSet)
 

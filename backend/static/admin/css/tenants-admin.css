@@ -1,0 +1,47 @@
+/* tenants-admin.css */
+.module caption {
+    background: #1e3a8a;
+    color: white;
+    font-weight: bold;
+}
+.tenant-logo-preview img {
+    max-height: 180px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+.subdomain-code {
+    background: #f3f4f6;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-family: monospace;
+}
+
+/* tenants-admin.css */
+.module caption {
+    background: #1e3a8a;
+    color: white;
+}
+.branch-status-active {
+    color: green;
+    font-weight: bold;
+}
+.branch-status-inactive {
+    color: red;
+    font-weight: bold;
+}
+.subdomain-preview {
+    background: #f3f4f6;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-family: monospace;
+}
+
+/* static/admin/css/tenants-admin.css */
+.module ul {
+    list-style-type: disc;
+    margin-left: 20px;
+}
+.submit-row input {
+    padding: 10px 20px;
+    font-size: 14px;
+}

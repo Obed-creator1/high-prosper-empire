@@ -1,0 +1,78 @@
+{% extends "admin/change_list.html" %}
+{% load i18n admin_urls static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.css">
+{% endblock %}
+
+{% block object-tools-items %}
+{{ block.super }}
+
+{% if admin_stats %}
+<div class="bg-white dark:bg-gray-800 p-6 mb-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+    <h3 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
+        <span class="text-2xl">📊</span> Push Subscription Dashboard
+    </h3>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+        <div class="bg-indigo-50 dark:bg-indigo-950/40 p-4 rounded-lg">
+            <p class="text-sm text-indigo-700 dark:text-indigo-300">Total</p>
+            <p class="text-3xl font-bold text-indigo-600">{{ admin_stats.total_subscriptions }}</p>
+        </div>
+        <div class="bg-green-50 dark:bg-green-950/40 p-4 rounded-lg">
+            <p class="text-sm text-green-700 dark:text-green-300">Active</p>
+            <p class="text-3xl font-bold text-green-600">{{ admin_stats.active_subscriptions }}</p>
+        </div>
+        <div class="bg-emerald-50 dark:bg-emerald-950/40 p-4 rounded-lg">
+            <p class="text-sm text-emerald-700 dark:text-emerald-300">Healthy (recent)</p>
+            <p class="text-3xl font-bold text-emerald-600">{{ admin_stats.healthy_recent }}</p>
+        </div>
+        <div class="bg-purple-50 dark:bg-purple-950/40 p-4 rounded-lg">
+            <p class="text-sm text-purple-700 dark:text-purple-300">Recent (7d)</p>
+            <p class="text-3xl font-bold text-purple-600">{{ admin_stats.recent_activity }}</p>
+        </div>
+        <div class="bg-blue-50 dark:bg-blue-950/40 p-4 rounded-lg">
+            <p class="text-sm text-blue-700 dark:text-blue-300">Health Rate</p>
+            <p class="text-3xl font-bold text-blue-600">{{ admin_stats.health_rate }}%</p>
+        </div>
+    </div>
+
+    <!-- Push Success Rate Chart -->
+    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+        <h4 class="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200">Recent Push Activity (Last 30 Days)</h4>
+        <canvas id="pushChart" height="100"></canvas>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const ctx = document.getElementById('pushChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: {{ chart_data.labels|safe }},
+        datasets: [{
+            label: 'Successful Pushes per Day',
+            data: {{ chart_data.values|safe }},
+        backgroundColor: 'rgba(79, 70, 229, 0.7)',
+            borderColor: 'rgba(79, 70, 229, 1)',
+            borderWidth: 1
+    }]
+    },
+        options: {
+            responsive: true,
+                scales: {
+                y: { beginAtZero: true, title: { display: true, text: 'Number of Pushes' } },
+                x: { title: { display: true, text: 'Date' } }
+            },
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+    });
+</script>
+{% endif %}
+{% endblock %}

@@ -1,21 +1,43 @@
 import os
+import warnings
 from pathlib import Path
 from datetime import timedelta
 from dotenv import load_dotenv
 import logging
 from celery.schedules import crontab
-import warnings
-
+import os
+import json
+from google.oauth2 import service_account
 
 logging.getLogger("django.server").setLevel(logging.ERROR)
 
-
+# Load environment variables from .env (only in development)
 load_dotenv()
 
-# Base directory
+# Build paths
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 FIREBASE_CREDENTIALS_PATH = BASE_DIR / "firebase-service-account.json"
+
+# Get credentials from environment (recommended for production)
+FIREBASE_CREDENTIALS_JSON = os.getenv("FIREBASE_CREDENTIALS_JSON")
+
+try:
+    if FIREBASE_CREDENTIALS_JSON:
+        # Production: use JSON string from env var
+        credentials_info = json.loads(FIREBASE_CREDENTIALS_JSON)
+        firebase_credentials = service_account.Credentials.from_service_account_info(credentials_info)
+        print("Firebase credentials loaded from environment variable (production mode)")
+    elif FIREBASE_CREDENTIALS_PATH.exists():
+        # Local development fallback
+        firebase_credentials = service_account.Credentials.from_service_account_file(str(FIREBASE_CREDENTIALS_PATH))
+        print(f"Firebase credentials loaded from file: {FIREBASE_CREDENTIALS_PATH}")
+    else:
+        raise FileNotFoundError("Firebase service account file not found and no env var provided")
+
+except json.JSONDecodeError as e:
+    raise ValueError("Invalid JSON in FIREBASE_CREDENTIALS_JSON environment variable") from e
+except Exception as e:
+    raise RuntimeError(f"Failed to load Firebase credentials: {e}") from e
 
 # SECURITY
 SECRET_KEY = os.getenv('SECRET_KEY')
@@ -54,6 +76,8 @@ INSTALLED_APPS = [
     # Local apps
     'customers.apps.CustomersConfig',
     'users',
+    'upload',
+    'chat',
     'payments',
     'notifications',
     'hr',
@@ -69,7 +93,7 @@ INSTALLED_APPS = [
     'asset',
     'channels',
     'dashboard',
-    'tenants',
+    'tenants.apps.TenantsConfig',
     'billing',
 
     ]
@@ -98,6 +122,7 @@ MIDDLEWARE = [
     'high_prosper.middleware.ContentTypeMiddleware',
     'auditlog.middleware.AuditlogMiddleware',
     'tenants.middleware.TenantMiddleware',
+    'users.middleware.UpdateLastSeenMiddleware',
 ]
 
 MIDDLEWARE.insert(0, "corsheaders.middleware.CorsMiddleware")
@@ -161,6 +186,19 @@ AUTH_PASSWORD_VALIDATORS = [
 
 AUTH_USER_MODEL = 'users.CustomUser'
 
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
+
+# Cache timeout: 5 minutes for real-time metrics
+VILLAGE_METRICS_CACHE_TTL = 300  # seconds
+
 # Internationalization
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Africa/Kigali'
@@ -199,7 +237,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
-CSRF_TRUSTED_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000"]
+CSRF_TRUSTED_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000", 'http://127.0.0.1:8000', 'http://localhost:8000']
+
 CORS_ALLOW_CREDENTIALS = True
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
@@ -536,3 +575,25 @@ MOMO_DISBURSEMENT_USER = 'your_disbursement_api_user'
 MOMO_DISBURSEMENT_KEY = 'your_disbursement_api_key'
 MOMO_DISBURSEMENT_KEYs = 'your_disbursement_subscription_key'
 
+AFRICAS_TALKING_USERNAME = "your_username"  # sandbox or live
+AFRICAS_TALKING_API_KEY = "your_api_key"
+AFRICAS_TALKING_SENDER_ID = "HighProsper"  # Optional shortcode
+
+ADMIN_SMS_PHONES = ["+250781293073"]
+
+# settings.py
+MTN_MOMO = {
+    'SANDBOX': True,  # Set False for production
+    'SUBSCRIPTION_KEY': 'your_primary_key_here',
+    'API_USER_ID': 'your_api_user_id',
+    'API_KEY': 'your_api_secret_key',
+    'CALLBACK_HOST': 'https://yourdomain.com',  # Your public URL
+    'TARGET_ENVIRONMENT': 'sandbox' if True else 'production',
+
+    # Endpoints
+    'BASE_URL': 'https://sandbox.momodeveloper.mtn.com',  # Change to https://ericssonbasicapi2.azure-api.net for prod
+    'TOKEN_URL': '/collection/token/',
+    'REQUEST_TO_PAY_URL': '/collection/v1_0/requesttopay',
+    'DISBURSE_URL': '/disbursement/v1_0/transfer',
+    'CHECK_STATUS_URL': '/collection/v1_0/requesttopay/',  # + transaction_id
+}

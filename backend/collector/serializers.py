@@ -2,7 +2,7 @@
 from rest_framework import serializers
 from .models import (
     Collector, WasteCollectionSchedule, VehicleTurnCount,
-    CollectorTarget, CollectorTask, CollectorLocationHistory
+    CollectorTask, CollectorLocationHistory
 )
 from fleet.serializers import VehicleSerializer  # Assuming you have this
 from customers.serializers import VillageSerializer
@@ -40,15 +40,6 @@ class VehicleTurnCountSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = VehicleTurnCount
-        fields = '__all__'
-
-
-class CollectorTargetSerializer(serializers.ModelSerializer):
-    collector = CollectorSerializer(read_only=True)
-    village = VillageSerializer(read_only=True)
-
-    class Meta:
-        model = CollectorTarget
         fields = '__all__'
 
 

@@ -20,9 +20,11 @@ urlpatterns = [
     path('api/v1/', include([
         path('stock/', include('stock.urls')),
         path('hr/', include('hr.urls')),
+        path('upload/', include('upload.urls')),
         path('accounting/', include('accounting.urls')),
         path('payments/', include('payments.urls')),
         path('fleet/', include('fleet.urls')),
+        path('tenants/', include('tenants.urls')),
         path('customers/', include('customers.urls')),
         path('users/', include('users.urls')),
         path('dashboard/', include('dashboard.urls')),

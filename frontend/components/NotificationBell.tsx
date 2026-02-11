@@ -1,11 +1,11 @@
-// components/NotificationBell.tsx — FULL REAL-TIME NOTIFICATION SYSTEM WITH SETTINGS
+// components/NotificationBell.tsx — HIGH PROSPER NOTIFICATION BELL 2026
 "use client";
 
 import { useState, useEffect, useRef } from "react";
 import {
     Bell, BellRing, X, Check, Circle, CheckCircle2, AlertCircle, Info,
     Clock, DollarSign, UserCheck, AlertTriangle, Sparkles, MessageSquare,
-    Users, Crown, BellOff, Trash2, Edit2
+    Users, Crown, BellOff, Trash2, Edit2, MoreVertical, Eye, EyeOff
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,12 +16,14 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatDistanceToNow } from "date-fns";
 import api from "@/lib/api";
 import toast from "react-hot-toast";
 import Cookies from "js-cookie";
+import { useRouter } from "next/navigation";
 
-// Notification Interface
 interface Notification {
     id: number;
     title?: string;
@@ -31,246 +33,148 @@ interface Notification {
     created_at: string;
     notification_type?: string;
     action_url?: string;
-    image?: string;
     verb?: string;
-}
-
-// Settings Interface
-interface NotificationSettings {
-    notify_realtime: boolean;
-    notify_browser: boolean;
-    notify_sound: boolean;
-    notify_payment: boolean;
-    notify_customer_update: boolean;
-    notify_chat: boolean;
-    notify_task: boolean;
-    notify_leave: boolean;
-    notify_system: boolean;
-    // ... add more types as needed
 }
 
 const getCategoryConfig = (type: string = "info") => {
     const configs: Record<string, any> = {
-        success: { icon: CheckCircle2, color: 'text-green-600', bg: 'bg-green-50/80', dot: 'bg-green-500', ring: 'ring-green-500/20', sound: 'success' },
-        error: { icon: AlertCircle, color: 'text-red-600', bg: 'bg-red-50/80', dot: 'bg-red-500', ring: 'ring-red-500/20', sound: 'error' },
-        chat: { icon: MessageSquare, color: 'text-pink-600', bg: 'bg-pink-50/80', dot: 'bg-pink-500', ring: 'ring-pink-500/20', sound: 'chat' },
-        group: { icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50/80', dot: 'bg-indigo-500', ring: 'ring-indigo-500/20', sound: 'group' },
-        admin: { icon: Crown, color: 'text-yellow-600', bg: 'bg-yellow-50/80', dot: 'bg-yellow-500', ring: 'ring-yellow-500/20', sound: 'admin' },
-        info: { icon: Info, color: 'text-blue-600', bg: 'bg-blue-50/80', dot: 'bg-blue-500', ring: 'ring-blue-500/20', sound: 'default' },
-        create: { icon: Sparkles, color: 'text-green-600', bg: 'bg-green-50/80', dot: 'bg-green-500', sound: 'success' },
-        update: { icon: Edit2, color: 'text-blue-600', bg: 'bg-blue-50/80', dot: 'bg-blue-500', sound: 'default' },
-        delete: { icon: Trash2, color: 'text-red-600', bg: 'bg-red-50/80', dot: 'bg-red-500', sound: 'error' },
-        payment_success: { icon: DollarSign, color: 'text-green-600', bg: 'bg-green-50/80', dot: 'bg-green-500', sound: 'success' },
-        payment_pending: { icon: Clock, color: 'text-yellow-600', bg: 'bg-yellow-50/80', dot: 'bg-yellow-500', sound: 'default' },
-        payment_failed: { icon: AlertTriangle, color: 'text-red-600', bg: 'bg-red-50/80', dot: 'bg-red-500', sound: 'error' },
+        success: { icon: CheckCircle2, color: 'text-green-600', bg: 'bg-green-50', dot: 'bg-green-500' },
+        error: { icon: AlertCircle, color: 'text-red-600', bg: 'bg-red-50', dot: 'bg-red-500' },
+        warning: { icon: AlertTriangle, color: 'text-yellow-600', bg: 'bg-yellow-50', dot: 'bg-yellow-500' },
+        chat: { icon: MessageSquare, color: 'text-pink-600', bg: 'bg-pink-50', dot: 'bg-pink-500' },
+        group: { icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50', dot: 'bg-indigo-500' },
+        admin: { icon: Crown, color: 'text-purple-600', bg: 'bg-purple-50', dot: 'bg-purple-500' },
+        create: { icon: Sparkles, color: 'text-emerald-600', bg: 'bg-emerald-50', dot: 'bg-emerald-500' },
+        update: { icon: Edit2, color: 'text-blue-600', bg: 'bg-blue-50', dot: 'bg-blue-500' },
+        delete: { icon: Trash2, color: 'text-red-600', bg: 'bg-red-50', dot: 'bg-red-500' },
+        sector: { icon: Crown, color: 'text-purple-700', bg: 'bg-purple-50', dot: 'bg-purple-600' },
+        cell: { icon: Users, color: 'text-indigo-700', bg: 'bg-indigo-50', dot: 'bg-indigo-600' },
+        village: { icon: DollarSign, color: 'text-teal-600', bg: 'bg-teal-50', dot: 'bg-teal-500' },
+        info: { icon: Info, color: 'text-cyan-600', bg: 'bg-cyan-50', dot: 'bg-cyan-500' },
     };
-    return configs[type] || configs.info;
-};
-
-const SOUND_URLS = {
-    default: "/sounds/notification.mp3",
-    success: "/sounds/success.mp3",
-    error: "/sounds/alert.mp3",
-    chat: "/sounds/chat.mp3",
-    group: "/sounds/group.mp3",
-    admin: "/sounds/admin.mp3",
-};
-
-const playNotificationSound = (type: string = "default") => {
-    const audio = new Audio(SOUND_URLS[type] || SOUND_URLS.default);
-    audio.volume = 0.6;
-    audio.play().catch(() => console.log("Sound blocked by browser"));
+    return configs[type.toLowerCase()] || configs.info;
 };
 
 export default function NotificationBell() {
+    const router = useRouter();
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
-    const [settings, setSettings] = useState<NotificationSettings | null>(null);
+    const [activeTab, setActiveTab] = useState("all");
     const wsRef = useRef<WebSocket | null>(null);
+    const [currentTime, setCurrentTime] = useState(Date.now());
 
-    // Helper: Safe format date
+    useEffect(() => {
+        const fetchNotifications = async () => {
+            setIsLoading(true);
+            try {
+                const res = await api.get("/notifications/api/notifications/");
+                const data = Array.isArray(res.data) ? res.data : res.data?.results || [];
+                const sorted = data.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+                setNotifications(sorted);
+                setUnreadCount(sorted.filter((n: Notification) => n.unread).length);
+            } catch (err) {
+                toast.error("Failed to load notifications");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchNotifications();
+    }, []);
+
+    useEffect(() => {
+        const token = Cookies.get("token");
+        if (!token) return;
+
+        const wsUrl = `${process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000'}/ws/notifications/?token=${token}`;
+        wsRef.current = new WebSocket(wsUrl);
+
+        wsRef.current.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                if (data.type === "notification") {
+                    const newNotif: Notification = {
+                        id: data.id || Date.now(),
+                        title: data.title || "New Update",
+                        message: data.message || data.description,
+                        unread: true,
+                        created_at: data.timestamp || new Date().toISOString(),
+                        notification_type: data.notification_type || data.verb,
+                        action_url: data.action_url,
+                        verb: data.verb,
+                    };
+                    setNotifications(prev => {
+                        const updated = [newNotif, ...prev.filter(n => n.id !== newNotif.id)];
+                        return updated.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+                    });
+                    setUnreadCount(prev => prev + 1);
+                    toast(newNotif.title, { description: newNotif.message, duration: 6000 });
+                }
+            } catch (err) {
+                console.error("WS error:", err);
+            }
+        };
+
+        return () => wsRef.current?.close();
+    }, []);
+
+    // Auto-update time every 30 seconds
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setCurrentTime(Date.now());
+        }, 30000); // Every 30 seconds
+
+        return () => clearInterval(interval);
+    }, []);
+
+    // Updated safeFormatDate — uses current time
     const safeFormatDate = (dateStr?: string) => {
         if (!dateStr) return "Just now";
         try {
             const date = new Date(dateStr);
             if (isNaN(date.getTime())) return "Just now";
             return formatDistanceToNow(date, { addSuffix: true });
-        } catch (err) {
+        } catch {
             return "Just now";
         }
     };
 
-    // Fetch user notification settings
-    useEffect(() => {
-        const fetchSettings = async () => {
-            try {
-                const res = await api.get("/users/notification-settings/");
-                setSettings(res.data);
-            } catch (err) {
-                console.error("Failed to load settings:", err);
-                toast.error("Could not load notification settings");
-            }
-        };
-        fetchSettings();
-    }, []);
-
-    // Fetch initial notifications
-    useEffect(() => {
-        const fetchNotifications = async () => {
-            setIsLoading(true);
-            try {
-                const res = await api.get("/notifications/api/notifications/");
-                const data = Array.isArray(res.data)
-                    ? res.data
-                    : res.data?.results || res.data?.data || [];
-
-                setNotifications(data);
-                setUnreadCount(data.filter((n: Notification) => n.unread).length);
-            } catch (err) {
-                console.error("Failed to load notifications:", err);
-                toast.error("Could not load notifications");
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchNotifications();
-    }, []);
-
-    // Real-time WebSocket — Only connect if realtime is enabled
-    useEffect(() => {
-        if (!settings?.notify_realtime) {
-            console.log("Realtime notifications disabled by user settings");
-            return;
-        }
-
-        let reconnectTimeout: NodeJS.Timeout | null = null;
-        const token = Cookies.get("token");
-
-        if (!token) {
-            console.warn("No auth token — notifications disabled");
-            return;
-        }
-
-        const connectWebSocket = () => {
-            const wsUrl = `${process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000'}/ws/notifications/?token=${token}`;
-
-            wsRef.current = new WebSocket(wsUrl);
-
-            wsRef.current.onopen = () => {
-                console.log("Notification WS Connected");
-                if (reconnectTimeout) {
-                    clearTimeout(reconnectTimeout);
-                    reconnectTimeout = null;
-                }
-            };
-
-            wsRef.current.onmessage = (event) => {
-                try {
-                    const data = JSON.parse(event.data);
-
-                    // Skip if user disabled this type
-                    const type = data.notification_type || data.verb || "info";
-                    if (
-                        (type.includes("payment") && !settings.notify_payment) ||
-                        (type.includes("update") && !settings.notify_customer_update) ||
-                        (type === "chat" && !settings.notify_chat) ||
-                        (type === "task" && !settings.notify_task) ||
-                        (type === "leave" && !settings.notify_leave) ||
-                        (type === "system" && !settings.notify_system)
-                    ) {
-                        return; // Skip this notification
-                    }
-
-                    if (data.type === "notification") {
-                        const newNotif: Notification = {
-                            id: data.id || Date.now(),
-                            title: data.title || data.verb || "Notification",
-                            message: data.message || data.description || "New update",
-                            unread: true,
-                            created_at: data.timestamp || new Date().toISOString(),
-                            notification_type: type,
-                            action_url: data.action_url,
-                            image: data.image,
-                            verb: data.verb,
-                        };
-
-                        setNotifications(prev => [newNotif, ...prev]);
-                        setUnreadCount(prev => prev + 1);
-
-                        // Sound only if enabled
-                        if (settings.notify_sound) {
-                            const config = getCategoryConfig(type);
-                            playNotificationSound(config.sound);
-                        }
-
-                        // Browser push only if enabled
-                        if (settings.notify_browser && Notification.permission === "granted" && document.hidden) {
-                            new Notification(newNotif.title, {
-                                body: newNotif.message,
-                                icon: "/icon-192x192.png",
-                                badge: "/badge-72x72.png",
-                                image: newNotif.image,
-                                vibrate: [200, 100, 200],
-                                tag: "high-prosper-notification"
-                            });
-                        }
-
-                        // Toast always (non-blocking)
-                        toast(newNotif.message, {
-                            duration: 5000,
-                            position: "top-right"
-                        });
-                    } else if (data.type === "unread_count") {
-                        setUnreadCount(data.count);
-                    }
-                } catch (err) {
-                    console.error("Invalid WS message:", err);
-                }
-            };
-
-            wsRef.current.onerror = (err) => console.error("WS error:", err);
-            wsRef.current.onclose = () => {
-                console.log("WS closed");
-                reconnectTimeout = setTimeout(connectWebSocket, 5000);
-            };
-        };
-
-        connectWebSocket();
-
-        return () => {
-            if (wsRef.current) wsRef.current.close();
-            if (reconnectTimeout) clearTimeout(reconnectTimeout);
-        };
-    }, [settings]);
-
-    // Mark single as read
     const markAsRead = async (id: number) => {
         try {
             await api.post(`/notifications/${id}/mark-read/`);
             setNotifications(prev => prev.map(n => n.id === id ? { ...n, unread: false } : n));
             setUnreadCount(prev => Math.max(0, prev - 1));
         } catch (err) {
-            console.error("Failed to mark as read:", err);
+            toast.error("Failed");
         }
     };
 
-    // Mark all notifications as read
+    const deleteNotification = async (id: number) => {
+        try {
+            await api.delete(`/notifications/${id}/`);
+            setNotifications(prev => prev.filter(n => n.id !== id));
+            setUnreadCount(prev => prev - (notifications.find(n => n.id === id)?.unread ? 1 : 0));
+            toast.success("Deleted");
+        } catch (err) {
+            toast.error("Failed to delete");
+        }
+    };
+
     const markAllAsRead = async () => {
         try {
-            await api.post("/notifications/mark_all_as_read/");  // FIXED: correct URL
+            await api.post("/notifications/mark_all_as_read/");
             setNotifications(prev => prev.map(n => ({ ...n, unread: false })));
             setUnreadCount(0);
-            toast.success("All notifications marked as read");
+            toast.success("All marked as read");
         } catch (err) {
-            console.error("Failed to mark all as read:", err);
-            toast.error("Failed to mark all as read");
+            toast.error("Failed");
         }
     };
 
-    const recent = notifications.slice(0, 10);
+    const displayedNotifications = activeTab === "unread"
+        ? notifications.filter(n => n.unread)
+        : notifications;
 
     return (
         <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
@@ -281,94 +185,146 @@ export default function NotificationBell() {
                     ) : (
                         <Bell className="h-6 w-6 text-gray-600 dark:text-gray-300" />
                     )}
-
                     {unreadCount > 0 && (
-                        <div className="absolute -top-2 -right-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-bold rounded-full min-w-6 h-6 flex items-center justify-center shadow-lg animate-bounce">
+                        <div className="absolute -top-2 -right-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-lg animate-bounce">
                             {unreadCount > 99 ? "99+" : unreadCount}
                         </div>
                     )}
                 </Button>
             </DropdownMenuTrigger>
 
-            <DropdownMenuContent align="end" className="w-96 max-h-96 overflow-y-auto bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border-2 border-purple-200 dark:border-purple-800 shadow-2xl">
-                <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white p-6 rounded-t-2xl">
-                    <div className="flex items-center justify-between">
+            <DropdownMenuContent align="end" className="w-96 max-h-[80vh] p-0 bg-white dark:bg-gray-900 shadow-2xl border border-purple-200 dark:border-purple-800">
+                {/* Professional Header */}
+                <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 text-white p-6">
+                    <div className="flex items-center justify-between mb-4">
                         <div>
-                            <h3 className="text-2xl font-bold">Notifications</h3>
-                            <p className="text-sm opacity-90">You have {unreadCount} unread</p>
+                            <h2 className="text-2xl font-black">Notifications Center</h2>
+                            <p className="text-sm opacity-90">Stay updated with real-time alerts</p>
                         </div>
-                        {unreadCount > 0 && (
-                            <Button
-                                variant="secondary"
-                                size="sm"
-                                onClick={markAllAsRead}
-                                className="bg-white/20 hover:bg-white/30 text-white border-0"
-                            >
-                                <Check className="h-4 w-4 mr-2" />
-                                Mark all read
-                            </Button>
-                        )}
+                        <div className="text-right">
+                            <p className="text-3xl font-black">{unreadCount}</p>
+                            <p className="text-xs opacity-80">Unread</p>
+                        </div>
                     </div>
+
+                    {unreadCount > 0 && (
+                        <Button variant="secondary" size="sm" onClick={markAllAsRead} className="w-full bg-white/20 hover:bg-white/30">
+                            <Check className="h-4 w-4 mr-2" /> Mark All as Read
+                        </Button>
+                    )}
                 </div>
 
-                <DropdownMenuSeparator className="h-px bg-purple-200 dark:bg-purple-800" />
+                {/* Tabs */}
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                    <TabsList className="grid w-full grid-cols-2 rounded-none bg-gray-100 dark:bg-gray-800">
+                        <TabsTrigger value="all">All</TabsTrigger>
+                        <TabsTrigger value="unread">Unread ({unreadCount})</TabsTrigger>
+                    </TabsList>
 
-                {recent.length === 0 ? (
-                    <DropdownMenuItem className="text-center py-16 text-gray-500">
-                        <BellOff className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                        <p className="text-xl font-medium">All caught up!</p>
-                        <p className="text-sm">No new notifications</p>
-                    </DropdownMenuItem>
-                ) : (
-                    <>
-                        {recent.map((n) => {
-                            const config = getCategoryConfig(n.notification_type || n.verb || "info");
-                            const Icon = config.icon;
+                    <TabsContent value={activeTab} className="mt-0">
+                        <ScrollArea className="h-96">
+                            {isLoading ? (
+                                <div className="p-12 text-center text-gray-500">Loading notifications...</div>
+                            ) : displayedNotifications.length === 0 ? (
+                                <div className="p-16 text-center">
+                                    <BellOff className="h-20 w-20 mx-auto text-gray-300 mb-4" />
+                                    <p className="text-xl font-medium text-gray-600 dark:text-gray-400">
+                                        {activeTab === "unread" ? "No unread notifications" : "All caught up!"}
+                                    </p>
+                                </div>
+                            ) : (
+                                displayedNotifications.map((n) => {
+                                    const config = getCategoryConfig(n.notification_type || n.verb || "info");
+                                    const Icon = config.icon;
 
-                            return (
-                                <DropdownMenuItem
-                                    key={n.id}
-                                    className={`flex items-start gap-4 py-5 px-6 cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-gray-700/50 ${
-                                        n.unread ? `${config.bg} ${config.ring} ring-4` : ""
-                                    }`}
-                                    onSelect={(e) => {
-                                        e.preventDefault();
-                                        if (n.unread) markAsRead(n.id);
-                                        if (n.action_url) window.location.href = n.action_url;
-                                    }}
-                                >
-                                    {n.unread && (
-                                        <div className={`w-3 h-3 rounded-full ${config.dot} animate-pulse mt-2`} />
-                                    )}
+                                    return (
+                                        <div
+                                            key={n.id}
+                                            className={`relative p-5 border-b border-gray-200 dark:border-gray-700 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-all cursor-pointer ${
+                                                n.unread ? "bg-purple-50/50 dark:bg-purple-900/20" : ""
+                                            }`}
+                                            onClick={() => {
+                                                if (n.unread) markAsRead(n.id);
+                                                if (n.action_url) router.push(n.action_url);
+                                            }}
+                                        >
+                                            {/* Unread dot */}
+                                            {n.unread && (
+                                                <div className={`absolute left-3 top-8 w-3 h-3 rounded-full ${config.dot} animate-pulse`} />
+                                            )}
 
-                                    <div className={`p-3 rounded-2xl ${config.bg} ${config.color}`}>
-                                        <Icon className="h-6 w-6" />
-                                    </div>
+                                            <div className="flex items-start gap-4">
+                                                <div className={`p-3 rounded-xl ${config.bg} flex-shrink-0`}>
+                                                    <Icon className={`h-6 w-6 ${config.color}`} />
+                                                </div>
 
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center justify-between">
-                                            <h4 className="font-bold text-lg">{n.title || n.verb || "Notification"}</h4>
-                                            <span className="text-xs text-gray-500">
-                                                {safeFormatDate(n.created_at)}
-                                            </span>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center justify-between gap-4">
+                                                        <h4 className={`font-bold ${n.unread ? "text-purple-900 dark:text-purple-100" : "text-gray-900 dark:text-gray-100"}`}>
+                                                            {n.title || "System Update"}
+                                                        </h4>
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8 opacity-60 hover:opacity-100">
+                                                                    <MoreVertical className="h-4 w-4" />
+                                                                </Button>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent align="end">
+                                                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                                <DropdownMenuSeparator />
+                                                                {n.unread ? (
+                                                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); markAsRead(n.id); }}>
+                                                                        <Check className="h-4 w-4 mr-2" /> Mark as Read
+                                                                    </DropdownMenuItem>
+                                                                ) : (
+                                                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); markAsRead(n.id); }}>
+                                                                        <Eye className="h-4 w-4 mr-2" /> Mark as Unread
+                                                                    </DropdownMenuItem>
+                                                                )}
+                                                                {n.action_url && (
+                                                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); router.push(n.action_url); }}>
+                                                                        <Eye className="h-4 w-4 mr-2" /> View Details
+                                                                    </DropdownMenuItem>
+                                                                )}
+                                                                <DropdownMenuSeparator />
+                                                                <DropdownMenuItem
+                                                                    className="text-red-600"
+                                                                    onClick={(e) => { e.stopPropagation(); deleteNotification(n.id); }}
+                                                                >
+                                                                    <Trash2 className="h-4 w-4 mr-2" /> Delete
+                                                                </DropdownMenuItem>
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
+                                                    </div>
+
+                                                    <p className="text-sm text-gray-700 dark:text-gray-300 mt-2 whitespace-pre-line">
+                                                        {n.message || n.description || "No message"}
+                                                    </p>
+                                                    <p className="text-xs text-gray-500 mt-3">
+                                                        {safeFormatDate(n.created_at)}
+                                                        {/* Hidden dependency to trigger re-render */}
+                                                        <span className="hidden">{currentTime}</span>
+                                                    </p>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <p className="text-sm text-gray-600 dark:text-gray-300 mt-1 line-clamp-2">
-                                            {n.message || n.description || "New update"}
-                                        </p>
-                                    </div>
-                                </DropdownMenuItem>
-                            );
-                        })}
+                                    );
+                                })
+                            )}
+                        </ScrollArea>
+                    </TabsContent>
+                </Tabs>
 
-                        {notifications.length > 10 && (
-                            <>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem className="justify-center font-bold text-purple-600 hover:bg-purple-50">
-                                    View all notifications →
-                                </DropdownMenuItem>
-                            </>
-                        )}
-                    </>
+                {notifications.length > 0 && (
+                    <div className="p-4 border-t border-gray-200 dark:border-gray-700 text-center">
+                        <Button
+                            variant="ghost"
+                            className="text-purple-600 hover:text-purple-700 font-medium"
+                            onClick={() => router.push("/dashboard/notifications")}
+                        >
+                            View All Notifications →
+                        </Button>
+                    </div>
                 )}
             </DropdownMenuContent>
         </DropdownMenu>

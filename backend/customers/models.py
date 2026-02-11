@@ -1,5 +1,5 @@
 # backend/customers/models.py (Vision 2026)
-
+from django.apps import apps
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.core.validators import FileExtensionValidator, MinValueValidator
@@ -26,7 +26,36 @@ class Sector(TimestampedModel):
     name = models.CharField(max_length=100, unique=True)
     code = models.CharField(max_length=10, unique=True, blank=True, null=True)
 
-    def __str__(self): return f"{self.code or ''} - {self.name}"
+    # Sector Leadership — Many-to-Many for flexibility
+    managers = models.ManyToManyField(
+        CustomUser,
+        limit_choices_to={'role': 'manager'},
+        related_name='managed_sectors',
+        blank=True,
+        help_text="Field Sector Managers responsible for this sector"
+    )
+
+    supervisors = models.ManyToManyField(
+        CustomUser,
+        limit_choices_to={'role': 'supervisor'},
+        related_name='supervised_sectors',
+        blank=True,
+        help_text="Field Site Supervisors operating in this sector"
+    )
+
+    class Meta:
+        verbose_name = "Sector"
+        verbose_name_plural = "Sectors"
+        ordering = ['name']
+
+    def __str__(self):
+        return f"{self.code or 'SECTOR'} - {self.name}"
+
+    def get_manager_names(self):
+        return ", ".join([u.get_full_name() or u.username for u in self.managers.all()]) or "No Manager Assigned"
+
+    def get_supervisor_names(self):
+        return ", ".join([u.get_full_name() or u.username for u in self.supervisors.all()]) or "No Supervisor Assigned"
 
 class Cell(TimestampedModel):
     name = models.CharField(max_length=100)
@@ -59,12 +88,185 @@ class Village(TimestampedModel):
         validators=[MinValueValidator(0)],
         help_text="Estimated population of the village"
     )
+    monthly_revenue_target = models.DecimalField(
+        max_digits=15, decimal_places=2, default=0,
+        help_text="Monthly revenue collection target (RWF)"
+    )
+
+    # Customer Growth Target
+    monthly_new_customers_target = models.PositiveIntegerField(
+        default=0,
+        help_text="Target number of new customers to acquire this month"
+    )
+
+    # Current Month/Year for Targets
+    target_month = models.PositiveSmallIntegerField(
+        default=timezone.now().month,
+        help_text="Month this target applies to"
+    )
+    target_year = models.PositiveSmallIntegerField(
+        default=timezone.now().year,
+        help_text="Year this target applies to"
+    )
+
+    # === AUTO-CALCULATED FROM REAL DATA ===
+    collected_this_month = models.DecimalField(
+        max_digits=15, decimal_places=2, default=0, editable=False
+    )
+    previous_month_collected = models.DecimalField(
+        max_digits=15, decimal_places=2, default=0, editable=False
+    )
+
+    # === RANKING — Auto-calculated monthly ===
+    performance_rank = models.PositiveSmallIntegerField(
+        null=True, blank=True, editable=False,
+        help_text="Village rank this month by target achievement (1 = best)"
+    )
+
+    new_customers_this_month = models.PositiveIntegerField(default=0, editable=False)
+    previous_month_new_customers = models.PositiveIntegerField(default=0, editable=False)
     is_active = models.BooleanField(default=True, help_text="Is this village currently active?")
 
     class Meta:
-        ordering = ['name']
+        ordering = ['-performance_rank', 'name']  # Best performers first
         verbose_name = "Village"
         verbose_name_plural = "Villages"
+        indexes = [
+            models.Index(fields=['target_month', 'target_year']),
+            models.Index(fields=['performance_rank']),
+            models.Index(fields=['monthly_revenue_target']),
+            models.Index(fields=['monthly_new_customers_target']),
+        ]
+
+    def __str__(self):
+        collectors_str = ", ".join(c.username for c in self.collectors.all()) or "Unassigned"
+        return f"{self.name} ({collectors_str})"
+
+    def save(self, *args, **kwargs):
+        # Remove transient flags before actual save
+        if hasattr(self, '_metrics_updated'):
+            del self._metrics_updated
+        super().save(*args, **kwargs)
+
+    # === REVENUE PROPERTIES ===
+    @property
+    def revenue_target_percentage(self):
+        if self.monthly_revenue_target > 0:
+            # Convert Decimal to float for calculation
+            return round(float(self.collected_this_month) / float(self.monthly_revenue_target) * 100, 2)
+        return 0.0
+
+    @property
+    def remaining_revenue_target(self):
+        return max(self.monthly_revenue_target - self.collected_this_month, 0)
+
+    # === CUSTOMER GROWTH PROPERTIES ===
+    @property
+    def new_customers_target_percentage(self):
+        if self.monthly_new_customers_target > 0:
+            return round((self.new_customers_this_month / self.monthly_new_customers_target) * 100, 2)
+        return 0.0
+
+    @property
+    def remaining_new_customers_target(self):
+        return max(self.monthly_new_customers_target - self.new_customers_this_month, 0)
+
+    # === OVERALL PERFORMANCE ===
+    @property
+    def overall_target_percentage(self):
+        """Weighted: 70% revenue + 30% growth"""
+        return round(
+            (self.revenue_target_percentage * 0.7) +
+            (self.new_customers_target_percentage * 0.3),
+            2
+        )
+
+    # === UPDATE METHODS ===
+    def update_collected_and_growth(self):
+        """Call daily via cron or signal"""
+        today = timezone.now()
+        month_start = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+        Payment = apps.get_model('payments', 'Payment')
+
+        # Revenue
+        collected = Payment.objects.filter(
+            customer__village=self,
+            status='Successful',
+            completed_at__gte=month_start
+        ).aggregate(total=Sum('amount'))['total'] or 0
+
+        # New customers
+        new_customers = Customer.objects.filter(
+            village=self,
+            created_at__gte=month_start
+        ).count()
+
+        self.collected_this_month = collected
+        self.new_customers_this_month = new_customers
+        self.save(update_fields=[
+            'collected_this_month',
+            'new_customers_this_month'
+        ])
+
+    # === UPDATE & RANK METHOD ===
+    def update_performance_and_rank(self):
+        """Update collected/growth and recalculate rank"""
+        today = timezone.now()
+        month_start = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+        Payment = apps.get_model('payments', 'Payment')
+
+        # Update real data
+        collected = Payment.objects.filter(
+            customer__village=self,
+            status='Successful',
+            completed_at__gte=month_start
+        ).aggregate(total=Sum('amount'))['total'] or 0
+
+        new_customers = Customer.objects.filter(
+            village=self,
+            created_at__gte=month_start
+        ).count()
+
+        self.collected_this_month = collected
+        self.new_customers_this_month = new_customers
+        self.save(update_fields=['collected_this_month', 'new_customers_this_month'])
+
+    @classmethod
+    def update_all_ranks(cls, month=None, year=None):
+        """
+        Run monthly (via cron) to rank all villages
+        """
+        if month is None:
+            month = timezone.now().month
+        if year is None:
+            year = timezone.now().year
+
+        # Get all villages with targets for this month
+        villages = cls.objects.filter(
+            target_month=month,
+            target_year=year,
+            monthly_revenue_target__gt=0  # Only ranked if target set
+        )
+
+        # Force update performance
+        for village in villages:
+            village.update_performance_and_rank()
+
+        # Reload with fresh data
+        villages = villages.order_by('-overall_target_percentage')
+
+        # Assign ranks
+        for rank, village in enumerate(villages, start=1):
+            village.performance_rank = rank
+            village.save(update_fields=['performance_rank'])
+
+        # Clear rank for villages without target
+        cls.objects.filter(
+            Q(target_month=month, target_year=year) &
+            Q(monthly_revenue_target=0)
+        ).update(performance_rank=None)
 
     def __str__(self):
         collectors_str = ", ".join(c.username for c in self.collectors.all()) or "Unassigned"
@@ -82,6 +284,17 @@ class Village(TimestampedModel):
     @property
     def total_balance(self):
         return sum(customer.balance or 0 for customer in self.residents.all())
+
+    @property
+    def avg_risk(self):
+        """Average risk score of all customers in this village"""
+        risk_scores = [
+            c.risk_score for c in self.residents.all()
+            if c.risk_score is not None and c.risk_score > 0
+        ]
+        if risk_scores:
+            return round(sum(risk_scores) / len(risk_scores), 2)
+        return 0.0
 
 # --- Customer ---
 class Customer(TimestampedModel):
@@ -204,4 +417,110 @@ class Complaint(TimestampedModel):
     satisfaction_score = models.PositiveSmallIntegerField(null=True, blank=True)  # 1-5
 
     def __str__(self): return f"Complaint #{self.id} - {self.title}"
+
+class ServiceRequest(TimestampedModel):
+    """
+    One-off service requests (gigs) — can be from customers or non-customers
+    Examples: Water tank cleaning, pipe repair, new connection setup, etc.
+    """
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('quoted', 'Quoted'),
+        ('accepted', 'Accepted'),
+        ('in_progress', 'In Progress'),
+        ('completed', 'Completed'),
+        ('cancelled', 'Cancelled'),
+        ('rejected', 'Rejected'),
+    ]
+
+    PAYMENT_STATUS_CHOICES = [
+        ('unpaid', 'Unpaid'),
+        ('partially_paid', 'Partially Paid'),
+        ('paid', 'Paid'),
+        ('refunded', 'Refunded'),
+    ]
+
+    # Requester info (non-customer friendly)
+    requester_name = models.CharField(max_length=200)
+    requester_phone = models.CharField(max_length=20)
+    requester_email = models.EmailField(blank=True, null=True)
+    requester_nid = models.CharField(max_length=30, blank=True, null=True)
+
+    # Link to existing customer (optional)
+    customer = models.ForeignKey(
+        'Customer',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='service_requests',
+        help_text="If requester is an existing customer"
+    )
+
+    # Location
+    village = models.ForeignKey(
+        Village,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='service_requests'
+    )
+    address_details = models.TextField(help_text="Full address or landmarks")
+
+    # Request details
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    requested_date = models.DateField(null=True, blank=True, help_text="Preferred service date")
+
+    # Quotation & Payment
+    quoted_amount = models.DecimalField(
+        max_digits=15, decimal_places=2, default=0,
+        help_text="Amount quoted by staff"
+    )
+    final_amount = models.DecimalField(
+        max_digits=15, decimal_places=2, default=0,
+        help_text="Final amount after service"
+    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='unpaid')
+
+    # Assignment
+    assigned_to = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='assigned_service_requests',
+        limit_choices_to={'role__in': ['staff', 'supervisor', 'collector']}
+    )
+
+    # Completion
+    completed_at = models.DateTimeField(null=True, blank=True)
+    notes = models.TextField(blank=True, help_text="Internal notes or completion report")
+    satisfaction_score = models.PositiveSmallIntegerField(null=True, blank=True)  # 1-5 stars
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['status']),
+            models.Index(fields=['payment_status']),
+            models.Index(fields=['requester_phone']),
+            models.Index(fields=['village']),
+        ]
+
+    def __str__(self):
+        return f"Request #{self.id} - {self.title} by {self.requester_name}"
+
+    @property
+    def is_overdue(self):
+        if self.status in ['pending', 'quoted', 'accepted'] and self.requested_date:
+            return self.requested_date < timezone.now().date()
+        return False
+
+    @property
+    def total_payments(self):
+        return self.payments.filter(status='Successful').aggregate(total=Sum('amount'))['total'] or 0
+
+    @property
+    def balance_due(self):
+        return max(self.final_amount - self.total_payments, 0)
 

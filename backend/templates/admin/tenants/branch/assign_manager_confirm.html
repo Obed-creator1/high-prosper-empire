@@ -1,0 +1,25 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content %}
+<h1>{% trans "Confirm Manager Assignment" %}</h1>
+
+<p>{% blocktrans with manager=manager.get_full_name|default:manager.username branch_count=branches.count %}
+    Are you sure you want to assign <strong>{{ manager }}</strong> as manager to {{ branch_count }} branches?
+    {% endblocktrans %}</p>
+
+<ul>
+    {% for branch in branches %}
+    <li>{{ branch.name }} ({{ branch.company.name }})</li>
+    {% endfor %}
+</ul>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.hidden_fields }}
+    <div class="submit-row">
+        <input type="submit" name="confirm" value="{% trans 'Confirm Assignment' %}" class="default"/>
+        <a href="{% url 'admin:tenants_branch_changelist' %}" class="button cancel-link">{% trans "Cancel" %}</a>
+    </div>
+</form>
+{% endblock %}

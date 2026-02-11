@@ -9,7 +9,7 @@ from channels.layers import get_channel_layer
 
 from .models import (
     CustomUser, ChatMessage, ChatRoom, RoomMember,
-    MessageReaction, BlockedUser
+    MessageReaction, BlockedUser, Activity
 )
 from .serializers import ChatMessageSerializer, UserSerializer, ChatRoomSerializer
 import json
@@ -485,3 +485,91 @@ class UsersSidebarConsumer(AsyncWebsocketConsumer):
                 "unread_count": unread
             })
         return payload
+
+class ActivityConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        user = self.scope['user']
+        if user.is_anonymous:
+            await self.close()
+            return
+
+        self.user_group_name = f"user_{user.id}"
+
+        if self.scope['user'].is_staff or self.scope['user'].is_superuser or self.scope['user'].role in ['admin', 'ceo']:
+            await self.channel_layer.group_add("admin_group", self.channel_name)
+
+        # Join user's personal group
+        await self.channel_layer.group_add(
+            self.user_group_name,
+            self.channel_name
+        )
+        await self.accept()
+
+        # Optional: send current unread count on connect
+        unread = await database_sync_to_async(
+            lambda: Activity.objects.filter(user=user, is_read=False).count()
+        )()
+        await self.send(text_data=json.dumps({
+            "type": "unread_count",
+            "count": unread
+        }))
+
+        # Send unread count on connect
+        unread_count = await self.get_unread_count(user)
+        await self.send(text_data=json.dumps({
+            'type': 'unread_count',
+            'count': unread_count
+        }))
+
+
+    async def disconnect(self, close_code):
+        if hasattr(self, 'user_group_name'):
+            await self.channel_layer.group_discard(
+                self.user_group_name,
+                self.channel_name
+            )
+
+    async def new_activity(self, event):
+        """Receive new activity broadcast"""
+        await self.send(text_data=json.dumps({
+            "type": "new_activity",
+            "activity": event["activity"]
+        }))
+
+    # Receive message from frontend (e.g. mark as read)
+    async def receive(self, text_data):
+        data = json.loads(text_data)
+        message_type = data.get('type')
+
+        if message_type == 'mark_read':
+            activity_id = data.get('activity_id')
+            await self.mark_activity_read(self.scope['user'], activity_id)
+            # Broadcast updated count
+            unread_count = await self.get_unread_count(self.scope['user'])
+            await self.channel_layer.group_send(
+                self.user_group_name,
+                {
+                    'type': 'unread_update',
+                    'count': unread_count
+                }
+            )
+
+    # Handler for messages sent to group
+    async def unread_update(self, event):
+        await self.send(text_data=json.dumps({
+            'type': 'unread_count',
+            'count': event['count']
+        }))
+
+    @database_sync_to_async
+    def get_unread_count(self, user):
+        return Activity.objects.filter(user=user, is_read=False).count()
+
+    @database_sync_to_async
+    def mark_activity_read(self, user, activity_id):
+        try:
+            activity = Activity.objects.get(id=activity_id, user=user)
+            activity.is_read = True
+            activity.save(update_fields=['is_read'])
+        except Activity.DoesNotExist:
+            pass

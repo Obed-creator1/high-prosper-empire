@@ -1,0 +1,54 @@
+{% extends "admin/index.html" %}
+{% load i18n static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'admin/css/dashboard-widgets.css' %}">
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <!-- Default Django modules -->
+    {{ block.super }}
+
+    <!-- Custom Dashboard Widgets -->
+    <div class="module">
+        <h2>{% trans "Tenant & Branch Overview" %}</h2>
+        <div class="dashboard-widgets" style="display: flex; gap: 20px; flex-wrap: wrap;">
+            <!-- Active Companies -->
+            <div class="widget" style="flex: 1; min-width: 300px; padding: 15px; background: #f0f9ff; border-radius: 8px;">
+                <h3>{% trans "Active Tenants" %}</h3>
+                <p style="font-size: 2.5em; margin: 10px 0;">{{ active_companies_count|default:"0" }}</p>
+                <a href="{% url 'admin:tenants_company_changelist' %}?is_active__exact=1">{% trans "View All" %}</a>
+            </div>
+
+            <!-- Total Branches -->
+            <div class="widget" style="flex: 1; min-width: 300px; padding: 15px; background: #f0fdf4; border-radius: 8px;">
+                <h3>{% trans "Total Branches" %}</h3>
+                <p style="font-size: 2.5em; margin: 10px 0;">{{ total_branches|default:"0" }}</p>
+                <a href="{% url 'admin:tenants_branch_changelist' %}">{% trans "View All" %}</a>
+            </div>
+
+            <!-- Branches without Manager -->
+            <div class="widget" style="flex: 1; min-width: 300px; padding: 15px; background: #fef3c7; border-radius: 8px;">
+                <h3>{% trans "Branches w/o Manager" %}</h3>
+                <p style="font-size: 2.5em; margin: 10px 0;">{{ branches_without_manager|default:"0" }}</p>
+                <a href="{% url 'admin:tenants_branch_changelist' %}?manager__isnull=True">{% trans "Fix Now" %}</a>
+            </div>
+
+            <!-- Total Active Users -->
+            <div class="widget" style="flex: 1; min-width: 300px; padding: 15px; background: #e0f2fe; border-radius: 8px;">
+                <h3>{% trans "Total Active Users" %}</h3>
+                <p style="font-size: 2.5em; margin: 10px 0;">{{ total_active_users|default:"0" }}</p>
+                <a href="{% url 'admin:users_customuser_changelist' %}">{% trans "View Users" %}</a>
+            </div>
+
+            <!-- New Users This Month -->
+            <div class="widget" style="flex: 1; min-width: 300px; padding: 15px; background: #ecfdf5; border-radius: 8px;">
+                <h3>{% trans "New Users (30 days)" %}</h3>
+                <p style="font-size: 2.5em; margin: 10px 0;">{{ new_users_this_month|default:"0" }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
