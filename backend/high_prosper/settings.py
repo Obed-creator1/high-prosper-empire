@@ -17,36 +17,40 @@ load_dotenv()
 # Build paths
 BASE_DIR = Path(__file__).resolve().parent.parent
 FIREBASE_CREDENTIALS_PATH = BASE_DIR / "firebase-service-account.json"
-
-# Get credentials from environment (recommended for production)
 FIREBASE_CREDENTIALS_JSON = os.getenv("FIREBASE_CREDENTIALS_JSON")
 
-try:
-    if FIREBASE_CREDENTIALS_JSON:
-        # Production: use JSON string from env var
+firebase_credentials = None  # Default
+
+if FIREBASE_CREDENTIALS_JSON:
+    try:
+        # Try loading from env var (production)
         credentials_info = json.loads(FIREBASE_CREDENTIALS_JSON)
         firebase_credentials = service_account.Credentials.from_service_account_info(credentials_info)
         print("Firebase credentials loaded from environment variable (production mode)")
-    elif FIREBASE_CREDENTIALS_PATH.exists():
-        # Local development fallback
-        firebase_credentials = service_account.Credentials.from_service_account_file(str(FIREBASE_CREDENTIALS_PATH))
-        print(f"Firebase credentials loaded from file: {FIREBASE_CREDENTIALS_PATH}")
-    else:
-        raise FileNotFoundError("Firebase service account file not found and no env var provided")
+    except json.JSONDecodeError:
+        # Fallback to file if env var is invalid
+        print("WARNING: FIREBASE_CREDENTIALS_JSON is invalid JSON. Falling back to file.")
+    except Exception as e:
+        raise RuntimeError(f"Failed to load Firebase credentials from env var: {e}") from e
 
-except json.JSONDecodeError as e:
-    raise ValueError("Invalid JSON in FIREBASE_CREDENTIALS_JSON environment variable") from e
-except Exception as e:
-    raise RuntimeError(f"Failed to load Firebase credentials: {e}") from e
+if not firebase_credentials:
+    if FIREBASE_CREDENTIALS_PATH.exists():
+        try:
+            firebase_credentials = service_account.Credentials.from_service_account_file(str(FIREBASE_CREDENTIALS_PATH))
+            print(f"Firebase credentials loaded from file: {FIREBASE_CREDENTIALS_PATH}")
+        except Exception as e:
+            raise RuntimeError(f"Failed to load Firebase credentials from file: {e}") from e
+    else:
+        raise FileNotFoundError(
+            "Firebase credentials not found: either provide a valid FIREBASE_CREDENTIALS_JSON "
+            "or ensure firebase-service-account.json exists in the project root."
+        )
 
 # SECURITY
 SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = True
-ALLOWED_HOSTS = [
-    "127.0.0.1",
-    "localhost",
-    '0225acc1eab5.ngrok-free.app',
-]
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
+
 
 # Applications
 INSTALLED_APPS = [
@@ -154,27 +158,28 @@ WSGI_APPLICATION = 'high_prosper.wsgi.application'
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-# settings.py — DATABASE CONFIGURATION WITH POSTGIS SUPPORT
+# settings.py — DATABASE CONFIGURATION WITH POSTGIS SUPPORT (using .env)
 DATABASES = {
     'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        'NAME': 'high_prosper_db',
-        'USER': 'obed',
-        'PASSWORD': 'Obedxyz1!',  # ← Move to .env in production!
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'NAME': os.getenv('DATABASE_NAME', 'high_prosper_db'),
+        'USER': os.getenv('DATABASE_USER', 'obed'),
+        'PASSWORD': os.getenv('DATABASE_PASSWORD', ''),  # ← keep empty fallback
+        'HOST': os.getenv('DATABASE_HOST', 'localhost'),
+        'PORT': os.getenv('DATABASE_PORT', '5432'),
         'OPTIONS': {
             'options': '-c search_path=public -c statement_timeout=30000',  # 30s query timeout
         },
-        'CONN_MAX_AGE': 600,                    # Keep connections alive 10 minutes
+        'CONN_MAX_AGE': int(os.getenv('DATABASE_CONN_MAX_AGE', 600)),       # Keep connections alive
         'CONN_HEALTH_CHECKS': True,             # Detect dead connections
         'AUTOCOMMIT': True,
-        'DISABLE_SERVER_SIDE_CURSORS': False,   # Better for large querysets
+        'DISABLE_SERVER_SIDE_CURSORS': False,  # Better for large querysets
         'TEST': {
-            'NAME': 'test_high_prosper_db',     # Auto test DB
+            'NAME': os.getenv('TEST_DATABASE_NAME', 'test_high_prosper_db'),  # Auto test DB
         },
     }
 }
+
 
 # Password validators
 AUTH_PASSWORD_VALIDATORS = [
@@ -185,16 +190,6 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 AUTH_USER_MODEL = 'users.CustomUser'
-
-CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/1",
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        }
-    }
-}
 
 # Cache timeout: 5 minutes for real-time metrics
 VILLAGE_METRICS_CACHE_TTL = 300  # seconds
@@ -360,18 +355,18 @@ CELERY_BEAT_SCHEDULE = {
 }
 
 # For MTN SMS API (keep existing)
-MTN_SMS = {
-    "CLIENT_ID": "r5hnHDh7aEVfuneuG2Pob2gb1AUxKg7B",
-    "CLIENT_SECRET": "BfaAd4PrnSzdVr66",
-    "BASE_URL": "https://sandbox.momodeveloper.mtn.com",  # or production URL
-}
+# MTN / MOMO
+MTN_API_KEY = os.getenv('MTN_API_KEY')
+MTN_CLIENT_ID = os.getenv('MTN_CLIENT_ID')
+MTN_CLIENT_SECRET = os.getenv('MTN_CLIENT_SECRET')
+MTN_SENDER_ID = os.getenv('MTN_SENDER_ID')
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "smtp.gmail.com"
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = "obedpianoman@gmail.com"
-EMAIL_HOST_PASSWORD = "jicl rpoe hlwo sduu"  # use an app password, not your real password
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = "High Prosper Services <obedpianoman@gmail.com>"
 
 
@@ -410,21 +405,15 @@ REST_FRAMEWORK = {
 }
 
 # MTN MoMo API Credentials
-MOMO_API_USER = "YOUR_MOMO_API_USER"
-MOMO_API_KEY = "YOUR_MOMO_API_KEY"
-MOMO_API_ENV = "sandbox"  # or 'production'
-MOMO_API_BASE_URL = "https://sandbox.momodeveloper.mtn.com/collection/v1_0"
+MOMO_API_USER = os.getenv('MOMO_API_USER')
+MOMO_API_KEY = os.getenv('MOMO_API_KEY')
+MOMO_SUBSCRIPTION_KEY = os.getenv('MOMO_SUBSCRIPTION_KEY')
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=7),
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-
-MTN_API_KEY = os.getenv('MTN_API_KEY')
-MTN_CLIENT_ID = os.getenv('MTN_CLIENT_ID')
-MTN_CLIENT_SECRET = os.getenv('MTN_CLIENT_SECRET')
-MTN_SENDER_ID = os.getenv('MTN_SENDER_ID')
 
 LOGGING = {
     'version': 1,
@@ -540,9 +529,10 @@ warnings.filterwarnings(
     message="pkg_resources is deprecated as an API"
 )
 
-STRIPE_SECRET_KEY = "sk_live_..."
-STRIPE_PUBLIC_KEY = "pk_live_..."
-STRIPE_WEBHOOK_SECRET = "whsec_..."
+# Stripe
+STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY')
+STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY')
+STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET')
 
 # Billing plans
 BILLING_PLANS = {
@@ -566,32 +556,35 @@ BILLING_PLANS = {
 }
 
 # WhatsApp Business API
-WHATSAPP_TOKEN = "EAAG...your_permanent_token"
-WHATSAPP_PHONE_NUMBER_ID = "123456789012345"
-WHATSAPP_VERIFY_TOKEN = "highprosper2025"  # Change this!
+WHATSAPP_TOKEN = os.getenv('WHATSAPP_TOKEN')
+WHATSAPP_PHONE_NUMBER_ID = os.getenv('WHATSAPP_PHONE_NUMBER_ID')
+WHATSAPP_VERIFY_TOKEN = os.getenv('WHATSAPP_VERIFY_TOKEN')
 
-MOMO_ENVIRONMENT = 'sandbox'  # or 'production'
-MOMO_DISBURSEMENT_USER = 'your_disbursement_api_user'
-MOMO_DISBURSEMENT_KEY = 'your_disbursement_api_key'
-MOMO_DISBURSEMENT_KEYs = 'your_disbursement_subscription_key'
+# MoMo Disbursement
+MOMO_ENVIRONMENT = os.getenv('MOMO_ENVIRONMENT', 'sandbox')  # 'sandbox' or 'production'
+MOMO_DISBURSEMENT_USER = os.getenv('MOMO_DISBURSEMENT_USER')
+MOMO_DISBURSEMENT_KEY = os.getenv('MOMO_DISBURSEMENT_KEY')
+MOMO_DISBURSEMENT_SUBSCRIPTION_KEY = os.getenv('MOMO_DISBURSEMENT_SUBSCRIPTION_KEY')
 
-AFRICAS_TALKING_USERNAME = "your_username"  # sandbox or live
-AFRICAS_TALKING_API_KEY = "your_api_key"
-AFRICAS_TALKING_SENDER_ID = "HighProsper"  # Optional shortcode
+# Africa's Talking
+AFRICAS_TALKING_USERNAME = os.getenv('AFRICAS_TALKING_USERNAME')
+AFRICAS_TALKING_API_KEY = os.getenv('AFRICAS_TALKING_API_KEY')
+AFRICAS_TALKING_SENDER_ID = os.getenv('AFRICAS_TALKING_SENDER_ID', 'HighProsper')
 
-ADMIN_SMS_PHONES = ["+250781293073"]
+# Admin phones for alerts
+ADMIN_SMS_PHONES = os.getenv('ADMIN_SMS_PHONES', '+250781293073').split(',')
 
-# settings.py
+# settings.py — MTN MoMo Configuration
 MTN_MOMO = {
-    'SANDBOX': True,  # Set False for production
-    'SUBSCRIPTION_KEY': 'your_primary_key_here',
-    'API_USER_ID': 'your_api_user_id',
-    'API_KEY': 'your_api_secret_key',
-    'CALLBACK_HOST': 'https://yourdomain.com',  # Your public URL
-    'TARGET_ENVIRONMENT': 'sandbox' if True else 'production',
+    'SANDBOX': os.getenv('MOMO_SANDBOX', 'True') == 'True',  # Converts string to boolean
+    'SUBSCRIPTION_KEY': os.getenv('MOMO_SUBSCRIPTION_KEY'),
+    'API_USER_ID': os.getenv('MOMO_API_USER'),
+    'API_KEY': os.getenv('MOMO_API_KEY'),
+    'CALLBACK_HOST': os.getenv('MOMO_CALLBACK_HOST', 'https://yourdomain.com'),
+    'TARGET_ENVIRONMENT': 'sandbox' if os.getenv('MOMO_SANDBOX', 'True') == 'True' else 'production',
 
     # Endpoints
-    'BASE_URL': 'https://sandbox.momodeveloper.mtn.com',  # Change to https://ericssonbasicapi2.azure-api.net for prod
+    'BASE_URL': os.getenv('MOMO_BASE_URL', 'https://sandbox.momodeveloper.mtn.com'),
     'TOKEN_URL': '/collection/token/',
     'REQUEST_TO_PAY_URL': '/collection/v1_0/requesttopay',
     'DISBURSE_URL': '/disbursement/v1_0/transfer',
