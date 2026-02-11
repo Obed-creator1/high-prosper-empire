@@ -8,6 +8,7 @@ from celery.schedules import crontab
 import os
 import json
 from google.oauth2 import service_account
+import dj_database_url
 
 logging.getLogger("django.server").setLevel(logging.ERROR)
 
@@ -158,27 +159,39 @@ WSGI_APPLICATION = 'high_prosper.wsgi.application'
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-# settings.py — DATABASE CONFIGURATION WITH POSTGIS SUPPORT (using .env)
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        'NAME': os.getenv('DATABASE_NAME', 'high_prosper_db'),
-        'USER': os.getenv('DATABASE_USER', 'obed'),
-        'PASSWORD': os.getenv('DATABASE_PASSWORD', ''),  # ← keep empty fallback
-        'HOST': os.getenv('DATABASE_HOST', 'localhost'),
-        'PORT': os.getenv('DATABASE_PORT', '5432'),
-        'OPTIONS': {
-            'options': '-c search_path=public -c statement_timeout=30000',  # 30s query timeout
-        },
-        'CONN_MAX_AGE': int(os.getenv('DATABASE_CONN_MAX_AGE', 600)),       # Keep connections alive
-        'CONN_HEALTH_CHECKS': True,             # Detect dead connections
-        'AUTOCOMMIT': True,
-        'DISABLE_SERVER_SIDE_CURSORS': False,  # Better for large querysets
-        'TEST': {
-            'NAME': os.getenv('TEST_DATABASE_NAME', 'test_high_prosper_db'),  # Auto test DB
-        },
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if DATABASE_URL:
+    # Production (Render, Railway, etc.)
+    DATABASES = {
+        'default': dj_database_url.parse(
+            DATABASE_URL,
+            conn_max_age=int(os.getenv('DATABASE_CONN_MAX_AGE', 600)),
+            ssl_require=True
+        )
     }
-}
+else:
+    # Local development
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.contrib.gis.db.backends.postgis',
+            'NAME': os.getenv('DATABASE_NAME', 'high_prosper_db'),
+            'USER': os.getenv('DATABASE_USER', 'obed'),
+            'PASSWORD': os.getenv('DATABASE_PASSWORD', ''),
+            'HOST': os.getenv('DATABASE_HOST', 'localhost'),
+            'PORT': os.getenv('DATABASE_PORT', '5432'),
+            'OPTIONS': {
+                'options': '-c search_path=public -c statement_timeout=30000',
+            },
+            'CONN_MAX_AGE': int(os.getenv('DATABASE_CONN_MAX_AGE', 600)),
+            'CONN_HEALTH_CHECKS': True,
+            'AUTOCOMMIT': True,
+            'DISABLE_SERVER_SIDE_CURSORS': False,
+            'TEST': {
+                'NAME': os.getenv('TEST_DATABASE_NAME', 'test_high_prosper_db'),
+            },
+        }
+    }
 
 
 # Password validators
