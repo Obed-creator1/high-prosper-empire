@@ -84,7 +84,7 @@ frozenlist==1.8.0
 fsspec==2025.9.0
 geographiclib==2.1
 geopy==2.4.1
-google-ai-generativelanguage==0.6.15
+# google-ai-generativelanguage==0.6.15
 google-api-core==2.28.1
 google-api-python-client==2.187.0
 google-auth==2.28.1
@@ -94,7 +94,7 @@ google-cloud-core==2.5.0
 google-cloud-firestore==2.22.0
 google-cloud-storage==3.7.0
 google-crc32c==1.7.1
-google-generativeai==0.8.5
+# google-generativeai==0.8.5
 google-resumable-media==2.8.0
 googleapis-common-protos==1.72.0
 grpcio==1.76.0
