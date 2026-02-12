@@ -2,7 +2,14 @@
 High Prosper Services - Project Initialization
 """
 
-# Import Celery app (safe import)
+import django.db.models.options as options
+
+# ✅ Patch for Django 5.2+ — allow legacy "index_together" Meta attribute
+# (used by django-notifications and other old libraries)
+if 'index_together' not in options.DEFAULT_NAMES:
+    options.DEFAULT_NAMES = (*options.DEFAULT_NAMES, 'index_together')
+
+# Import Celery app safely
 default_app_config = 'high_prosper.apps.HighProsperConfig'
 
 try:
