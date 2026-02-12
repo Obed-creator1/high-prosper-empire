@@ -184,7 +184,7 @@ WSGI_APPLICATION = 'high_prosper.wsgi.application'
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-# Get the DATABASE_URL from environment variables (Render provides this)
+# Get DATABASE_URL from environment variables (Render provides this)
 DATABASE_URL = os.getenv("DATABASE_URL", "")
 
 if DATABASE_URL:
@@ -193,18 +193,19 @@ if DATABASE_URL:
         "default": dj_database_url.parse(
             DATABASE_URL,
             conn_max_age=int(os.getenv("DATABASE_CONN_MAX_AGE", 600)),
-            ssl_require=True,
+            ssl_require=True,  # ensures SSL for Render Postgres
         )
     }
 else:
-    # --- Local development ---
+    # --- Local development using Render database ---
+    # Replace these values with your Render DB credentials
     DATABASES = {
         "default": {
-            "ENGINE": "django.contrib.gis.db.backends.postgis",
-            "NAME": os.getenv("DATABASE_NAME", "high_prosper_db"),
-            "USER": os.getenv("DATABASE_USER", "obed"),
-            "PASSWORD": os.getenv("DATABASE_PASSWORD", ""),
-            "HOST": os.getenv("DATABASE_HOST", "localhost"),
+            "ENGINE": "django.db.backends.postgresql",  # or 'django.db.backends.postgresql'
+            "NAME": os.getenv("DATABASE_NAME", "high_prosper_db"),  # Render DB name
+            "USER": os.getenv("DATABASE_USER", "obed_creator"),    # Render DB user
+            "PASSWORD": os.getenv("DATABASE_PASSWORD", "cl2lR1gaPSpAU31pzeH2aNbySfqEYraH"),  # Render DB password
+            "HOST": os.getenv("DATABASE_HOST", "dpg-d674m5ogjchc73ahvs70-a"),  # Render DB host
             "PORT": os.getenv("DATABASE_PORT", "5432"),
             "OPTIONS": {
                 "options": "-c search_path=public -c statement_timeout=30000",
