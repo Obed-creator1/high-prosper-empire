@@ -8,6 +8,7 @@ from django.db.models import Q, Count
 from datetime import datetime, timedelta
 import csv
 from django.utils import timezone
+from django.contrib.admin.sites import NotRegistered
 
 from .models import PushSubscription, UnsubscribeToken
 from notifications.base.admin import AbstractNotificationAdmin
@@ -467,14 +468,18 @@ class SubscriptionInline(admin.TabularInline):
 # CUSTOM USER ADMIN OVERRIDE
 # ────────────────────────────────────────────────
 
-admin.site.unregister(CustomUser)
+try:
+    admin.site.unregister(CustomUser)
+except NotRegistered:
+    # This prevents errors if CustomUser wasn't registered yet
+    pass
+
 
 @admin.register(CustomUser)
 class CustomUserAdmin(admin.ModelAdmin):  # or inherit from your original CustomUserAdmin
+    """Enhanced CustomUser admin with linked PushSubscription inline."""
     inlines = [SubscriptionInline]
 
-    # Add your original CustomUserAdmin fields, list_display, etc. here if needed
-    # Example:
     list_display = ('username', 'email', 'is_staff', 'is_active')
     search_fields = ('username', 'email')
     list_filter = ('is_staff', 'is_active')
