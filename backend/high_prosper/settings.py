@@ -50,7 +50,12 @@ if not firebase_credentials:
 # SECURITY
 SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = True
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "127.0.0.1,localhost,high-prosper-empire.onrender.com").split(",")
+ALLOWED_HOSTS = [
+    host.strip() for host in os.getenv(
+        "ALLOWED_HOSTS",
+        "127.0.0.1,localhost,high-prosper-empire.onrender.com"
+    ).split(",") if host.strip()
+]
 
 
 # Applications
