@@ -11,36 +11,26 @@
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        .js-preloader {
-            transition: opacity 0.5s ease;
-        }
-        .js-preloader.hidden {
-            opacity: 0;
-            display: none;
-        }
-        .page-wrapper {
-            display: block !important;
-        }
-        .home {
-            opacity: 1 !important;
-        }
+        .js-preloader { transition: opacity 0.5s ease; }
+        .js-preloader.hidden { opacity: 0; display: none; }
+        .page-wrapper { display: block !important; }
+        .home { opacity: 1 !important; }
     </style>
 </head>
 <body>
 <!-- preloader start -->
-<div class="preloader js-preloader">
-    <div></div>
-</div>
+<div class="preloader js-preloader"><div></div></div>
 <!-- preloader end -->
+
 <!-- page wrapper start -->
 <div class="page-wrapper">
     <!-- header start -->
     <header class="header js-header">
         <div class="container">
             <div class="logo" data-aos="fade-down" data-aos-duration="1000">
-                <a href="#">High Prosper <span>Services Ltd</span></a>
+                <a href="/">High Prosper <span>Services Ltd</span></a>
             </div>
             <button type="button" class="nav-toggler js-nav-toggler" data-aos="fade-down" data-aos-duration="1000" aria-label="Toggle navigation">
                 <span></span>
@@ -53,22 +43,24 @@
                     <li><a href="#pricing">pricing</a></li>
                     <li><a href="#team">team</a></li>
                     <li><a href="#contact">contact</a></li>
-                    <li><a href="{% url 'core:login' %}">login</a></li>
+                    <li><a href="{% url 'login' %}">login</a></li>
                 </ul>
             </nav>
         </div>
     </header>
     <!-- header end -->
+
     <!-- home section start -->
     <section class="home" id="home">
         <div class="container">
             <div class="grid">
                 <div class="home-text">
-                    <h1 data-aos="fade-down" data-aos-duration="1000">need cleaning services ? </h1>
-                    <p data-aos="fade-down" data-aos-duration="1000" data-aos-delay="150">Lorem ipsum dolor sit amet consectetur adipisicing
-                        elit. Vel nam veritatis perferendis numquam, dolorem repudiandae.</p>
+                    <h1 data-aos="fade-down" data-aos-duration="1000">Need cleaning services?</h1>
+                    <p data-aos="fade-down" data-aos-duration="1000" data-aos-delay="150">
+                        We provide professional and affordable cleaning solutions for homes and offices.
+                    </p>
                     <div class="btn-wrap" data-aos="fade-down" data-aos-duration="1000" data-aos-delay="300">
-                        <a href="#about" class="btn">know more</a>
+                        <a href="#about" class="btn">Know more</a>
                     </div>
                 </div>
                 <div class="home-img">
@@ -81,6 +73,7 @@
         </div>
     </section>
     <!-- home section end -->
+
     <!-- about section start -->
     <section class="about section-padding" id="about">
         <div class="container">
@@ -90,296 +83,104 @@
                         <img src="{% static 'img/about-img.jpg' %}" alt="About image">
                         <div class="box box-1">
                             <span>2.5k</span>
-                            <p>satisfied clients</p>
+                            <p>Satisfied clients</p>
                         </div>
                     </div>
                 </div>
                 <div class="about-text">
                     <div class="section-title">
-                        <span class="title" data-aos="fade-up" data-aos-duration="600">about us</span>
-                        <h2 class="sub-title" data-aos="fade-up" data-aos-duration="600">w're cleaning since 2010</h2>
+                        <span class="title" data-aos="fade-up">About us</span>
+                        <h2 class="sub-title" data-aos="fade-up">We’ve been cleaning since 2010</h2>
                     </div>
-                    <p data-aos="fade-up" data-aos-duration="600">Lorem ipsum, dolor sit amet consectetur adipisicing elit. Cum consequatur libero nostrum ex commodi culpa quis omnis exercitationem et veritatis.</p>
-                    <p data-aos="fade-up" data-aos-duration="600">Lorem ipsum dolor sit amet consectetur adipisicing elit. Numquam reprehenderit quis fugiat. Suscipit a nulla minima similique doloribus quisquam quas?</p>
+                    <p data-aos="fade-up">We offer top-quality cleaning services with a skilled and dedicated team. Our mission is to make every space shine.</p>
                 </div>
             </div>
         </div>
     </section>
     <!-- about section end -->
+
     <!-- services section start -->
     <section class="services section-padding" id="services">
         <div class="container">
             <div class="section-title">
-                <span class="title" data-aos="fade-up" data-aos-duration="600">services</span>
-                <h2 class="sub-title" data-aos="fade-up" data-aos-duration="600">what we do</h2>
+                <span class="title" data-aos="fade-up">Services</span>
+                <h2 class="sub-title" data-aos="fade-up">What we do</h2>
             </div>
             <div class="grid">
-                <!-- services item start -->
-                <div class="services-item" data-aos="fade-up" data-aos-duration="600">
-                    <div class="img-box">
-                        <img src="{% static 'img/service/house.jpg' %}" alt="Carpet cleaning">
-                    </div>
-                    <h3>carpet cleaning</h3>
-                </div>
-                <!-- services item end -->
-                <!-- services item start -->
-                <div class="services-item" data-aos="fade-up" data-aos-duration="100">
-                    <div class="img-box">
-                        <img src="{% static 'img/service/window.jpg' %}" alt="Window cleaning">
-                    </div>
-                    <h3>window cleaning</h3>
-                </div>
-                <!-- services item end -->
-                <!-- services item start -->
-                <div class="services-item" data-aos="fade-up" data-aos-duration="600" data-aos-delay="200">
-                    <div class="img-box">
-                        <img src="{% static 'img/service/bathroom.jpg' %}" alt="Bathroom cleaning">
-                    </div>
-                    <h3>bathroom cleaning</h3>
-                </div>
-                <!-- services item end -->
-                <!-- services item start -->
-                <div class="services-item" data-aos="fade-up" data-aos-duration="600" data-aos-delay="300">
-                    <div class="img-box">
-                        <img src="{% static 'img/service/furniture.jpg' %}" alt="Furniture cleaning">
-                    </div>
-                    <h3>furniture cleaning</h3>
-                </div>
-                <!-- services item end -->
+                <div class="services-item" data-aos="fade-up"><img src="{% static 'img/service/house.jpg' %}" alt="Carpet cleaning"><h3>Carpet cleaning</h3></div>
+                <div class="services-item" data-aos="fade-up"><img src="{% static 'img/service/window.jpg' %}" alt="Window cleaning"><h3>Window cleaning</h3></div>
+                <div class="services-item" data-aos="fade-up"><img src="{% static 'img/service/bathroom.jpg' %}" alt="Bathroom cleaning"><h3>Bathroom cleaning</h3></div>
+                <div class="services-item" data-aos="fade-up"><img src="{% static 'img/service/furniture.jpg' %}" alt="Furniture cleaning"><h3>Furniture cleaning</h3></div>
             </div>
         </div>
     </section>
     <!-- services section end -->
-    <!-- pricing section start -->
-    <section class="pricing section-padding" id="pricing">
-        <div class="container">
-            <div class="section-title">
-                <span class="title" data-aos="fade-up" data-aos-duration="600">pricing</span>
-                <h2 class="sub-title" data-aos="fade-up" data-aos-duration="600">our pricing plans</h2>
-            </div>
-            <div class="grid">
-                <!-- basic plan start -->
-                <div class="pricing-item" data-aos="fade-up" data-aos-duration="1000">
-                    <div class="pricing-header">
-                        <h3>basics</h3>
-                        <div class="price"><span>$299</span> monthly</div>
-                    </div>
-                    <div class="pricing-body">
-                        <ul>
-                            <li><i class="fas fa-check"></i> window cleaning</li>
-                            <li><i class="fas fa-check"></i> carpet cleaning</li>
-                            <li><i class="fas fa-times"></i> furniture cleaning</li>
-                            <li><i class="fas fa-times"></i> car cleaning</li>
-                            <li><i class="fas fa-times"></i> bathroom cleaning</li>
-                        </ul>
-                    </div>
-                    <div class="pricing-footer">
-                        <a href="#" class="btn">get started</a>
-                    </div>
-                </div>
-                <!-- basic plan end -->
-                <!-- standard plan start -->
-                <div class="pricing-item" data-aos="fade-up" data-aos-duration="100">
-                    <div class="pricing-header">
-                        <h3>standard</h3>
-                        <div class="price"><span>$499</span> monthly</div>
-                    </div>
-                    <div class="pricing-body">
-                        <ul>
-                            <li><i class="fas fa-check"></i> window cleaning</li>
-                            <li><i class="fas fa-check"></i> carpet cleaning</li>
-                            <li><i class="fas fa-check"></i> furniture cleaning</li>
-                            <li><i class="fas fa-check"></i> car cleaning</li>
-                            <li><i class="fas fa-times"></i> bathroom cleaning</li>
-                        </ul>
-                    </div>
-                    <div class="pricing-footer">
-                        <a href="#" class="btn">get started</a>
-                    </div>
-                </div>
-                <!-- standard plan end -->
-                <!-- premium plan start -->
-                <div class="pricing-item" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="200">
-                    <div class="pricing-header">
-                        <h3>premium</h3>
-                        <div class="price"><span>$899</span> monthly</div>
-                    </div>
-                    <div class="pricing-body">
-                        <ul>
-                            <li><i class="fas fa-check"></i> window cleaning</li>
-                            <li><i class="fas fa-check"></i> carpet cleaning</li>
-                            <li><i class="fas fa-check"></i> furniture cleaning</li>
-                            <li><i class="fas fa-check"></i> car cleaning</li>
-                            <li><i class="fas fa-check"></i> bathroom cleaning</li>
-                        </ul>
-                    </div>
-                    <div class="pricing-footer">
-                        <a href="#" class="btn">get started</a>
-                    </div>
-                </div>
-                <!-- premium plan end -->
-            </div>
-        </div>
-    </section>
-    <!-- pricing section end -->
-    <!-- team section start -->
-    <section class="team section-padding" id="team">
-        <div class="container">
-            <div class="section-title">
-                <span class="title" data-aos="fade-up" data-aos-duration="600">team</span>
-                <h2 class="sub-title" data-aos="fade-up" data-aos-duration="600">meet our team</h2>
-            </div>
-            <div class="grid">
-                <!-- team item start -->
-                <div class="team-item" data-aos="fade-up" data-aos-duration="1000">
-                    <div class="img-box">
-                        <img src="{% static 'img/team/1.png' %}" alt="Team member 1">
-                    </div>
-                    <div class="detail">
-                        <h3>devotha ntawigenera</h3>
-                        <p>team leader</p>
-                    </div>
-                </div>
-                <!-- team item end -->
-                <!-- team item start -->
-                <div class="team-item" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="100">
-                    <div class="img-box">
-                        <img src="{% static 'img/team/2.png' %}" alt="Team member 2">
-                    </div>
-                    <div class="detail">
-                        <h3>john doe</h3>
-                        <p>car cleaner</p>
-                    </div>
-                </div>
-                <!-- team item end -->
-                <!-- team item start -->
-                <div class="team-item" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="200">
-                    <div class="img-box">
-                        <img src="{% static 'img/team/3.png' %}" alt="Team member 3">
-                    </div>
-                    <div class="detail">
-                        <h3>john doe</h3>
-                        <p>cleaner</p>
-                    </div>
-                </div>
-                <!-- team item end -->
-            </div>
-        </div>
-    </section>
-    <!-- team section end -->
+
     <!-- contact section start -->
     <section class="contact section-padding" id="contact">
         <div class="container">
             <div class="section-title">
-                <span class="title" data-aos="fade-up" data-aos-duration="600">contact us</span>
-                <h2 class="sub-title" data-aos="fade-up" data-aos-duration="600">have any question ?</h2>
+                <span class="title" data-aos="fade-up">Contact us</span>
+                <h2 class="sub-title" data-aos="fade-up">Have any questions?</h2>
             </div>
             <div class="grid contact-grid">
                 <div class="contact-info">
-                    <div class="contact-info-item" data-aos="fade-up" data-aos-duration="600">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <h3>Address</h3>
-                        <p>Ville-Nyamata, Sec-Nyamata, Bugesera District, Eastern Rwanda</p>
-                    </div>
-                    <div class="contact-info-item" data-aos="fade-up" data-aos-duration="600">
-                        <i class="fas fa-phone"></i>
-                        <h3>Call us</h3>
-                        <p>250 781 293 073</p>
-                    </div>
-                    <div class="contact-info-item" data-aos="fade-up" data-aos-duration="600">
-                        <i class="fas fa-envelope"></i>
-                        <h3>Email us</h3>
-                        <p>obedpianoman@gmail.com</p>
-                    </div>
+                    <div class="contact-info-item"><i class="fas fa-map-marker-alt"></i><h3>Address</h3><p>Nyamata, Bugesera District, Rwanda</p></div>
+                    <div class="contact-info-item"><i class="fas fa-phone"></i><h3>Call us</h3><p>+250 781 293 073</p></div>
+                    <div class="contact-info-item"><i class="fas fa-envelope"></i><h3>Email us</h3><p>obedpianoman@gmail.com</p></div>
                 </div>
-                <div class="contact-form" data-aos="fade-up" data-aos-duration="600">
-                    <form method="post" action="{% url 'core:contact' %}">
+                <div class="contact-form">
+                    <form method="post" action="/">
                         {% csrf_token %}
                         <div class="input-box">
-                            <label for="name-input">Name</label>
-                            <input type="text" name="name" id="name-input" placeholder="Name" class="input-control" required>
+                            <label>Name</label>
+                            <input type="text" name="name" placeholder="Name" class="input-control" required>
                         </div>
                         <div class="input-box">
-                            <label for="email-input">Email</label>
-                            <input type="email" name="email" id="email-input" placeholder="Email" class="input-control" required>
+                            <label>Email</label>
+                            <input type="email" name="email" placeholder="Email" class="input-control" required>
                         </div>
                         <div class="input-box">
-                            <label for="phone-input">Phone</label>
-                            <input type="tel" name="phone" id="phone-input" placeholder="Phone" class="input-control" required>
+                            <label>Phone</label>
+                            <input type="tel" name="phone" placeholder="Phone" class="input-control" required>
                         </div>
                         <div class="input-box">
-                            <label for="message-input">Message</label>
-                            <textarea name="message" id="message-input" placeholder="Message" class="input-control" required></textarea>
+                            <label>Message</label>
+                            <textarea name="message" placeholder="Message" class="input-control" required></textarea>
                         </div>
-                        <div class="btn-wrap" data-aos="fade-up" data-aos-duration="600">
-                            <button type="submit" class="btn">Send Message</button>
-                        </div>
+                        <div class="btn-wrap"><button type="submit" class="btn">Send Message</button></div>
                     </form>
                 </div>
             </div>
         </div>
     </section>
     <!-- contact section end -->
+
     <!-- footer start -->
     <footer class="footer">
         <div class="container">
-            <h3>followEERE us</h3>
+            <h3>Follow us</h3>
             <div class="social-links">
-                <a href="#" title="facebook"><i class="fab fa-facebook-f"></i></a>
-                <a href="#" title="twitter"><i class="fab fa-twitter"></i></a>
-                <a href="#" title="instagram"><i class="fab fa-instagram"></i></a>
-                <a href="#" title="youtube"><i class="fab fa-youtube"></i></a>
+                <a href="#"><i class="fab fa-facebook-f"></i></a>
+                <a href="#"><i class="fab fa-twitter"></i></a>
+                <a href="#"><i class="fab fa-instagram"></i></a>
+                <a href="#"><i class="fab fa-youtube"></i></a>
             </div>
         </div>
     </footer>
     <!-- footer end -->
 </div>
 <!-- page wrapper end -->
-<!-- style switcher start -->
-<div class="style-switcher js-style-switcher">
-    <button type="button" class="style-switcher-toggler js-style-switcher-toggler" aria-label="Toggle style switcher">
-        <i class="fas fa-cog"></i>
-    </button>
-    <div class="style-switcher-main">
-        <h2>style switcher</h2>
-        <div class="style-switcher-item">
-            <p>Theme Color</p>
-            <div class="theme-color">
-                <label for="hue-slider">Adjust theme color hue</label>
-                <input type="range" min="0" max="360" class="hue-slider js-hue-slider" id="hue-slider" aria-label="Adjust theme color hue">
-                <div class="hue">Hue: <span class="js-hue"></span></div>
-            </div>
-        </div>
-        <div class="style-switcher-item">
-            <label class="form-switcher">
-                <span>Dark Mode</span>
-                <input type="checkbox" class="js-dark-mode" id="dark-mode">
-                <div class="box"></div>
-            </label>
-        </div>
-    </div>
-</div>
-<!-- style switcher end -->
+
+<!-- scripts -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/skrollr/0.6.30/skrollr.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
 <script src="{% static 'js/main.js' %}"></script>
 <script src="{% static 'js/style-switcher.js' %}"></script>
 <script>
     $(document).ready(function() {
-        // Fallback to hide preloader
-        setTimeout(function() {
-            $('.js-preloader').addClass('hidden');
-        }, 1000);
-        // Initialize AOS
+        setTimeout(() => $('.js-preloader').addClass('hidden'), 1000);
         AOS.init();
-        // Initialize Skrollr (only if needed)
-        if (typeof skrollr !== 'undefined') {
-            skrollr.init({
-                smoothScrolling: true,
-                mobileDeceleration: 0.1
-            });
-        }
     });
 </script>
 </body>
