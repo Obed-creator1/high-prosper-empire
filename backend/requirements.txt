@@ -51,7 +51,7 @@ django-crispy-forms==2.3
 django-filter==25.2
 django-fsm==3.0.1
 django-model-utils==5.0.0
-django-notifications-hq==1.8.3
+# django-notifications-hq==1.8.3
 django-postgres-extra==2.0.9
 django-redis==6.0.0
 django-safedelete==1.4.1
