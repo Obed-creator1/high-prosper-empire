@@ -184,36 +184,37 @@ WSGI_APPLICATION = 'high_prosper.wsgi.application'
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-DATABASE_URL = os.getenv("DATABASE_URL")
+# Get the DATABASE_URL from environment variables (Render provides this)
+DATABASE_URL = os.getenv("DATABASE_URL", "")
 
 if DATABASE_URL:
-    # Production (Render, Railway, etc.)
+    # --- Production / Render ---
     DATABASES = {
-        'default': dj_database_url.parse(
+        "default": dj_database_url.parse(
             DATABASE_URL,
-            conn_max_age=int(os.getenv('DATABASE_CONN_MAX_AGE', 600)),
-            ssl_require=True
+            conn_max_age=int(os.getenv("DATABASE_CONN_MAX_AGE", 600)),
+            ssl_require=True,
         )
     }
 else:
-    # Local development
+    # --- Local development ---
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.contrib.gis.db.backends.postgis',
-            'NAME': os.getenv('DATABASE_NAME', 'high_prosper_db'),
-            'USER': os.getenv('DATABASE_USER', 'obed'),
-            'PASSWORD': os.getenv('DATABASE_PASSWORD', ''),
-            'HOST': os.getenv('DATABASE_HOST', 'localhost'),
-            'PORT': os.getenv('DATABASE_PORT', '5432'),
-            'OPTIONS': {
-                'options': '-c search_path=public -c statement_timeout=30000',
+        "default": {
+            "ENGINE": "django.contrib.gis.db.backends.postgis",
+            "NAME": os.getenv("DATABASE_NAME", "high_prosper_db"),
+            "USER": os.getenv("DATABASE_USER", "obed"),
+            "PASSWORD": os.getenv("DATABASE_PASSWORD", ""),
+            "HOST": os.getenv("DATABASE_HOST", "localhost"),
+            "PORT": os.getenv("DATABASE_PORT", "5432"),
+            "OPTIONS": {
+                "options": "-c search_path=public -c statement_timeout=30000",
             },
-            'CONN_MAX_AGE': int(os.getenv('DATABASE_CONN_MAX_AGE', 600)),
-            'CONN_HEALTH_CHECKS': True,
-            'AUTOCOMMIT': True,
-            'DISABLE_SERVER_SIDE_CURSORS': False,
-            'TEST': {
-                'NAME': os.getenv('TEST_DATABASE_NAME', 'test_high_prosper_db'),
+            "CONN_MAX_AGE": int(os.getenv("DATABASE_CONN_MAX_AGE", 600)),
+            "CONN_HEALTH_CHECKS": True,
+            "AUTOCOMMIT": True,
+            "DISABLE_SERVER_SIDE_CURSORS": False,
+            "TEST": {
+                "NAME": os.getenv("TEST_DATABASE_NAME", "test_high_prosper_db"),
             },
         }
     }
