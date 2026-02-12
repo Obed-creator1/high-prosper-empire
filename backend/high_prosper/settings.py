@@ -198,10 +198,9 @@ if DATABASE_URL:
     }
 else:
     # --- Local development using Render database ---
-    # Replace these values with your Render DB credentials
     DATABASES = {
         "default": {
-            "ENGINE": "django.db.backends.postgresql",  # or 'django.db.backends.postgresql'
+            "ENGINE": "django.db.backends.postgresql",  # standard PostgreSQL, no GIS
             "NAME": os.getenv("DATABASE_NAME", "high_prosper_db"),  # Render DB name
             "USER": os.getenv("DATABASE_USER", "obed_creator"),    # Render DB user
             "PASSWORD": os.getenv("DATABASE_PASSWORD", "cl2lR1gaPSpAU31pzeH2aNbySfqEYraH"),  # Render DB password
@@ -219,7 +218,6 @@ else:
             },
         }
     }
-
 
 # Password validators
 AUTH_PASSWORD_VALIDATORS = [
