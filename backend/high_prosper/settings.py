@@ -245,14 +245,25 @@ WEASYPRINT_DPI = 300
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# CORS
+# ────────────────────────────────────────────────
+# CORS & CSRF CONFIGURATION
+# ────────────────────────────────────────────────
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "https://high-prosper-empire.onrender.com",  # Render (Frontend or Backend domain)
 ]
-CSRF_TRUSTED_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000", 'http://127.0.0.1:8000', 'http://localhost:8000']
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:8000",
+    "http://localhost:8000",
+    "https://high-prosper-empire.onrender.com",  # Render domain (HTTPS)
+]
 
 CORS_ALLOW_CREDENTIALS = True
+
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
