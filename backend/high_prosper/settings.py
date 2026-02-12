@@ -15,7 +15,9 @@ logging.getLogger("django.server").setLevel(logging.ERROR)
 # Load environment variables from .env (only in development)
 load_dotenv()
 
-# Build paths
+# ────────────────────────────────────────────────
+# BASE DIRECTORY
+# ────────────────────────────────────────────────
 BASE_DIR = Path(__file__).resolve().parent.parent
 FIREBASE_CREDENTIALS_PATH = BASE_DIR / "firebase-service-account.json"
 FIREBASE_CREDENTIALS_JSON = os.getenv("FIREBASE_CREDENTIALS_JSON")
@@ -140,24 +142,42 @@ MIDDLEWARE.insert(0, "corsheaders.middleware.CorsMiddleware")
 # URL configuration
 ROOT_URLCONF = 'high_prosper.urls'
 
-# Templates
+
+# ────────────────────────────────────────────────
+# TEMPLATES
+# ────────────────────────────────────────────────
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')],  # Optional templates folder
-        'APP_DIRS': True,  # Looks inside app templates automatically
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',  # Required by admin
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        # Global templates folder: backend/templates/
+        "DIRS": [
+            os.path.join(BASE_DIR, "templates"),
+            os.path.join(BASE_DIR, "high_prosper", "templates"),  # optional if you have main app templates
+        ],
+        "APP_DIRS": True,  # enable per-app template discovery
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",  # required by Django admin & auth
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
+                # custom project context processors
                 "users.context_processors.role_based_sidebar",
-                'hr.context_processors.notifications',
+                "hr.context_processors.notifications",
             ],
+            # Render-friendly setting (better performance in production)
+            "builtins": ["django.templatetags.static"],
         },
     },
 ]
+
+
+# ────────────────────────────────────────────────
+# TEMPLATE DEBUGGING
+# ────────────────────────────────────────────────
+# This helps show better errors if Render cannot find templates
+TEMPLATE_DEBUG = bool(os.getenv("DEBUG", "False").lower() in ("true", "1"))
+
 
 # WSGI
 WSGI_APPLICATION = 'high_prosper.wsgi.application'
