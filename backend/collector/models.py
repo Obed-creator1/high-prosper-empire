@@ -1,7 +1,7 @@
 # collector/models.py — HIGH PROSPER VISION 2026 (Integrated with Fleet)
 from django.db import models
 from django.utils import timezone
-from django.contrib.gis.db import models as gis_models
+from django.db import models
 from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVectorField
 from django.contrib.auth import get_user_model
@@ -37,7 +37,10 @@ class Collector(models.Model):
     shift_end = models.TimeField(null=True, blank=True)
 
     # GPS & Tracking
-    current_location = gis_models.PointField(null=True, blank=True)
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
+    current_latitude = models.FloatField(null=True, blank=True)
+    current_longitude = models.FloatField(null=True, blank=True)
     last_location_update = models.DateTimeField(null=True, blank=True)
 
     # Performance Metrics
@@ -226,7 +229,10 @@ class CollectorLocationHistory(models.Model):
     GPS tracking history for collectors
     """
     collector = models.ForeignKey(Collector, on_delete=models.CASCADE, related_name='location_history')
-    location = gis_models.PointField()
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
+    current_latitude = models.FloatField(null=True, blank=True)
+    current_longitude = models.FloatField(null=True, blank=True)
     timestamp = models.DateTimeField(default=timezone.now)
     speed = models.FloatField(null=True, blank=True)  # km/h
     battery_level = models.PositiveSmallIntegerField(null=True, blank=True)
