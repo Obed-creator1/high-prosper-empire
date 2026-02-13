@@ -291,13 +291,13 @@ CRISPY_TEMPLATE_PACK = "bootstrap5"
 ASGI_APPLICATION = 'backend.asgi.application'
 
 # Redis configuration
+REDIS_URL = os.getenv("REDIS_URL", "redis://127.0.0.1:6379")
+
 CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            'hosts': [('127.0.0.1', 6379)],
-            "capacity": 1500,
-            "expiry": 20,
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [REDIS_URL],
         },
     },
 }
